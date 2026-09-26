@@ -18,81 +18,96 @@
         }
         
         * { box-sizing: border-box; font-family: 'Heebo', sans-serif; }
-        body { background: var(--bg); color: var(--fg); margin: 0; padding: 30px; transition: all 0.3s ease; }
+        body { background: var(--bg); color: var(--fg); margin: 0; padding: 0; transition: all 0.3s ease; }
         
         h1, h2, h3 { font-weight: 800; text-transform: uppercase; margin-top: 0; }
         
-        button { background: var(--bg); color: var(--fg); border: var(--border); border-radius: var(--radius); padding: 10px 20px; font-weight: 600; font-size: 15px; cursor: pointer; box-shadow: var(--shadow); transition: 0.1s ease-in-out; }
+        button { background: var(--bg); color: var(--fg); border: var(--border); border-radius: var(--radius); padding: 10px 20px; font-weight: 800; font-size: 15px; cursor: pointer; box-shadow: var(--shadow); transition: 0.1s ease-in-out; }
         button:hover { transform: translate(3px, 3px); box-shadow: var(--shadow-hover); background: #e0e0e0; }
         button:active { transform: translate(5px, 5px); box-shadow: 0px 0px 0px #000; }
         
-        input, textarea, select { border: var(--border); border-radius: var(--radius); padding: 12px; margin-bottom: 15px; width: 100%; background: var(--panel-bg); color: var(--fg); outline: none; font-size: 15px; font-weight: 400; transition: 0.2s; }
+        input, textarea, select { border: var(--border); border-radius: var(--radius); padding: 12px; margin-bottom: 15px; width: 100%; background: var(--panel-bg); color: var(--fg); outline: none; font-size: 15px; font-weight: 600; transition: 0.2s; }
         input:focus, textarea:focus { box-shadow: var(--shadow); transform: translate(-2px, -2px); }
         
+        /* Layout */
+        #appContainer { display: none; padding: 30px; }
         .header { display: flex; justify-content: space-between; align-items: center; border-bottom: var(--border); padding-bottom: 20px; margin-bottom: 40px; }
         .grid { display: grid; grid-template-columns: 1fr 3fr; gap: 40px; }
-        
-        .panel { background: var(--panel-bg); border: var(--border); border-radius: var(--radius); padding: 25px; box-shadow: var(--shadow); animation: fadeIn 0.5s ease; }
+        .panel { background: var(--panel-bg); border: var(--border); border-radius: var(--radius); padding: 25px; box-shadow: var(--shadow); }
         
         .item-list { list-style: none; padding: 0; margin: 0; }
-        .item-list li { border-bottom: 2px solid #000; padding: 15px 0; cursor: pointer; transition: 0.2s; font-weight: 600; font-size: 16px; display: flex; justify-content: space-between; align-items: center; }
+        .item-list li { border-bottom: 2px solid #000; padding: 15px 0; cursor: pointer; transition: 0.2s; font-weight: 800; font-size: 16px; display: flex; justify-content: space-between; align-items: center; }
         .item-list li:hover { padding-right: 15px; background: #f9f9f9; }
         .item-list li:last-child { border-bottom: none; }
         
-        .file-card { background: var(--bg); border: var(--border); border-radius: var(--radius); padding: 20px; margin-bottom: 25px; box-shadow: var(--shadow); animation: slideUp 0.4s ease; }
+        .file-card { background: var(--bg); border: var(--border); border-radius: var(--radius); padding: 20px; margin-bottom: 25px; box-shadow: var(--shadow); }
         .file-actions { margin-bottom: 15px; display: flex; gap: 15px; flex-wrap: wrap; }
+        .badge { display: inline-block; padding: 4px 12px; border: 2px solid #000; border-radius: 20px; font-size: 14px; font-weight: 800; margin-right: 15px; background: #fff; }
         
-        .badge { display: inline-block; padding: 4px 12px; border: 2px solid #000; border-radius: 20px; font-size: 13px; font-weight: 600; margin-right: 15px; background: #fff; }
-        
+        /* Modals & Overlays */
         .notification-center { display: none; position: fixed; top: 90px; left: 30px; width: 350px; background: var(--panel-bg); border: var(--border); border-radius: var(--radius); box-shadow: -8px 8px 0 #000; padding: 20px; z-index: 100; max-height: 400px; overflow-y: auto; }
         
         .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); z-index: 1000; justify-content: center; align-items: center; backdrop-filter: blur(4px); }
-        .modal-content { background: var(--panel-bg); border: var(--border); border-radius: var(--radius); padding: 40px; width: 85%; max-width: 900px; max-height: 90vh; overflow-y: auto; box-shadow: 12px 12px 0 #000; animation: popIn 0.3s ease; }
+        .modal-content { background: var(--panel-bg); border: var(--border); border-radius: var(--radius); padding: 40px; width: 85%; max-width: 900px; max-height: 90vh; overflow-y: auto; box-shadow: 12px 12px 0 #000; }
         .close-btn { float: left; cursor: pointer; font-size: 24px; font-weight: 800; background: #000; color: #fff; width: 40px; height: 40px; display: flex; justify-content: center; align-items: center; border-radius: 50%; transition: 0.2s; }
         .close-btn:hover { background: #d32f2f; transform: rotate(90deg); }
         
+        /* Auth Screen */
+        #authScreen { display: none; justify-content: center; align-items: center; height: 100vh; background: var(--bg); }
+        .auth-box { background: var(--panel-bg); border: var(--border); padding: 40px; box-shadow: 15px 15px 0 #000; text-align: center; border-radius: var(--radius); width: 400px; }
+        
         .comment-box { border-top: 2px dashed #000; margin-top: 20px; padding-top: 20px; }
-        .comment { margin-bottom: 15px; font-size: 15px; background: #fff; border: 2px solid #000; border-radius: 6px; padding: 10px; }
+        .comment { margin-bottom: 15px; font-size: 15px; font-weight: 600; background: #fff; border: 2px solid #000; border-radius: 6px; padding: 10px; }
         .comment strong { background: #000; color: #fff; padding: 3px 8px; border-radius: 4px; margin-left: 8px; }
-
-        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
-        @keyframes slideUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
-        @keyframes popIn { from { transform: scale(0.95); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+        .reply-area { display: flex; gap: 10px; margin-top: 15px; }
     </style>
 </head>
 <body>
 
-    <div class="header">
-        <h1>Admin.Panel</h1>
-        <div>
-            <button onclick="window.toggleNotifications()">מרכז התראות <span id="notifCount" style="background:#000; color:#fff; padding:2px 6px; border-radius:4px;">0</span></button>
+    <!-- Auth Screen -->
+    <div id="authScreen">
+        <div class="auth-box">
+            <h2 style="font-size: 30px; margin-bottom: 30px;">התחברות לאדמין</h2>
+            <input type="password" id="adminPass" placeholder="הכנס סיסמה...">
+            <button onclick="window.checkPassword()" style="width: 100%; font-size: 18px; padding: 15px;">היכנס מערכת</button>
         </div>
     </div>
 
-    <div class="notification-center" id="notifCenter">
-        <h3>התראות מלקוחות</h3>
-        <div id="notifList"></div>
-    </div>
-
-    <div class="grid">
-        <div class="panel">
-            <h3>לקוחות</h3>
-            <input type="text" id="newClientName" placeholder="שם לקוח חדש (ללא רווחים)">
-            <button onclick="window.addClient()" style="width: 100%; margin-bottom: 20px;">צור לקוח</button>
-            <ul class="item-list" id="clientList"></ul>
-        </div>
-
-        <div class="panel" id="workspace" style="display: none;">
-            <h2 id="currentClientTitle" style="border-bottom: 3px solid #000; padding-bottom: 10px; display: inline-block;"></h2>
-            <div style="display: flex; gap: 15px; margin-top: 20px;">
-                <input type="text" id="filePhysical" placeholder="שם פיזי (ללא סיומת)">
-                <input type="text" id="fileDisplay" placeholder="שם תצוגה">
-                <button onclick="window.addFile()" style="white-space: nowrap; height: 52px;">צור קובץ</button>
+    <!-- Main App -->
+    <div id="appContainer">
+        <div class="header">
+            <h1>Admin.Panel</h1>
+            <div>
+                <button onclick="window.toggleNotifications()">מרכז התראות <span id="notifCount" style="background:#000; color:#fff; padding:2px 6px; border-radius:4px;">0</span></button>
             </div>
-            <div id="filesContainer" style="margin-top: 40px;"></div>
+        </div>
+
+        <div class="notification-center" id="notifCenter">
+            <h3>התראות מלקוחות</h3>
+            <div id="notifList"></div>
+        </div>
+
+        <div class="grid">
+            <div class="panel">
+                <h3>לקוחות</h3>
+                <input type="text" id="newClientName" placeholder="שם לקוח חדש (ללא רווחים)">
+                <button onclick="window.addClient()" style="width: 100%; margin-bottom: 20px;">צור לקוח</button>
+                <ul class="item-list" id="clientList"></ul>
+            </div>
+
+            <div class="panel" id="workspace" style="display: none;">
+                <h2 id="currentClientTitle" style="border-bottom: 3px solid #000; padding-bottom: 10px; display: inline-block;"></h2>
+                <div style="display: flex; gap: 15px; margin-top: 20px;">
+                    <input type="text" id="filePhysical" placeholder="שם פיזי (ללא סיומת)">
+                    <input type="text" id="fileDisplay" placeholder="שם תצוגה">
+                    <button onclick="window.addFile()" style="white-space: nowrap; height: 52px;">צור קובץ</button>
+                </div>
+                <div id="filesContainer" style="margin-top: 40px;"></div>
+            </div>
         </div>
     </div>
 
+    <!-- Editor / History Modal -->
     <div class="modal" id="modal">
         <div class="modal-content">
             <span class="close-btn" onclick="window.closeModal()">X</span>
@@ -102,6 +117,14 @@
     </div>
 
     <script type="module">
+        // === הגנת URL ראשונית ===
+        if (window.location.hash !== '#0552724255') {
+            document.body.innerHTML = '<div style="display:flex; justify-content:center; align-items:center; height:100vh; background:#f4f4f5;"><h1 style="font-size:50px; border:4px solid #000; padding:40px; background:#fff; box-shadow: 15px 15px 0 #000; border-radius: 8px;">גישה לא מאושרת לאדמין ⛔</h1></div>';
+            throw new Error("Unauthorized");
+        } else {
+            document.getElementById('authScreen').style.display = 'flex';
+        }
+
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
         import { getDatabase, ref, set, onValue, update } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
 
@@ -119,34 +142,47 @@
             measurementId: "G-BE0R2WQ35J"
         };
 
-        const app = initializeApp(firebaseConfig);
-        const db = getDatabase(app);
-
+        let db;
         let globalData = { clients: {}, files: {}, versions: {}, comments: {}, notifications: {} };
         let currentClientId = null;
 
-        onValue(ref(db, '/'), (snapshot) => {
-            const data = snapshot.val();
-            if (data) {
-                globalData = {
-                    clients: data.clients || {},
-                    files: data.files || {},
-                    versions: data.versions || {},
-                    comments: data.comments || {},
-                    notifications: data.notifications || {}
-                };
+        // === פונקציית התחברות לסיסמה ===
+        window.checkPassword = function() {
+            if(document.getElementById('adminPass').value === 'Amit@2012') {
+                document.getElementById('authScreen').style.display = 'none';
+                document.getElementById('appContainer').style.display = 'block';
+                initFirebase(); // הפעלת הדאטהבייס רק לאחר אימות
+            } else {
+                alert('סיסמה שגויה! ❌');
             }
-            
-            renderClients();
-            updateNotifCount();
-            renderNotifications();
-            if(currentClientId) renderFiles();
-            
-            const modalTitle = document.getElementById('modalTitle').innerText;
-            if(modalTitle === 'היסטוריית גרסאות' && window.currentOpenFileId) {
-                window.openHistory(window.currentOpenFileId);
-            }
-        });
+        };
+
+        function initFirebase() {
+            const app = initializeApp(firebaseConfig);
+            db = getDatabase(app);
+
+            onValue(ref(db, '/'), (snapshot) => {
+                const data = snapshot.val();
+                if (data) {
+                    globalData = {
+                        clients: data.clients || {},
+                        files: data.files || {},
+                        versions: data.versions || {},
+                        comments: data.comments || {},
+                        notifications: data.notifications || {}
+                    };
+                }
+                renderClients();
+                updateNotifCount();
+                renderNotifications();
+                if(currentClientId) renderFiles();
+                
+                const modalTitle = document.getElementById('modalTitle').innerText;
+                if(modalTitle === 'היסטוריית גרסאות' && window.currentOpenFileId) {
+                    window.openHistory(window.currentOpenFileId);
+                }
+            });
+        }
 
         function getArr(obj) { return Object.values(obj || {}); }
 
@@ -199,7 +235,7 @@
                 const card = document.createElement('div');
                 card.className = 'file-card';
                 card.innerHTML = `
-                    <h3>${f.displayName} <span style="font-size: 14px; color: #555; font-weight: 400;">(${f.physicalName})</span></h3>
+                    <h3>${f.displayName} <span style="font-size: 14px; color: #555; font-weight: 600;">(${f.physicalName})</span></h3>
                     <div style="margin-bottom: 20px;">
                         <span class="badge">${statusStr}</span>
                     </div>
@@ -223,11 +259,27 @@
 
             document.getElementById('modalTitle').innerText = `עריכה: ${f.physicalName}-v${vNum}`;
             document.getElementById('modalBody').innerHTML = `
+                <div style="background: #eef2f3; padding: 15px; border: 2px dashed #000; border-radius: 8px; margin-bottom: 15px;">
+                    <label style="font-weight: 800; display: block; margin-bottom: 10px;">📁 העלה קובץ HTML מהמחשב (יחליף את הקוד למטה):</label>
+                    <input type="file" id="htmlUpload" accept=".html" onchange="window.handleFileUpload(event)" style="margin: 0; background: #fff; padding: 5px;">
+                </div>
                 <textarea id="codeEditor" style="height: 350px; font-family: monospace; font-size: 14px;" dir="ltr">${prevCode}</textarea>
-                <button onclick="window.deployCode('${fileId}', ${vNum})" id="deployBtn" style="background:#000; color:#fff; width:100%; height:50px; font-size:18px;">שמור והעלה ל-Netlify</button>
+                <button onclick="window.deployCode('${fileId}', ${vNum})" id="deployBtn" style="background:#000; color:#fff; width:100%; height:50px; font-size:18px;">שמור והעלה ל-Netlify 🚀</button>
                 <div id="deployStatus" style="margin-top: 15px; font-weight: 800; text-align: center; font-size: 18px;"></div>
             `;
             document.getElementById('modal').style.display = 'flex';
+        }
+
+        // פונקציית העלאת קובץ לעורך
+        window.handleFileUpload = function(event) {
+            const file = event.target.files[0];
+            if(file) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    document.getElementById('codeEditor').value = e.target.result;
+                };
+                reader.readAsText(file);
+            }
         }
 
         window.deployCode = async function(fileId, vNum) {
@@ -339,7 +391,39 @@
             comms.forEach(c => {
                 html += `<div class="comment"><strong>${c.author === 'admin' ? 'אני' : 'לקוח'}</strong> ${c.text}</div>`;
             });
+            
+            // שורת השבת אדמין ללקוח
+            html += `
+                <div class="reply-area">
+                    <input type="text" id="adminReply_${versionId}" placeholder="השב ללקוח כאן..." style="margin:0;">
+                    <button onclick="window.sendAdminReply('${versionId}', '${fileId}')" style="white-space:nowrap;">שלח תגובה</button>
+                </div>
+            `;
             box.innerHTML = html;
+        }
+
+        window.sendAdminReply = function(versionId, fileId) {
+            const input = document.getElementById(`adminReply_${versionId}`);
+            const text = input.value.trim();
+            if(!text) return;
+            
+            const cId = 'cm_' + Date.now();
+            set(ref(db, 'comments/' + cId), { id: cId, versionId: versionId, text: text, author: 'admin' });
+            
+            const file = globalData.files[fileId];
+            const vData = globalData.versions[versionId];
+            
+            // שליחת התראה ללקוח (target: 'client')
+            const nId = 'n_' + Date.now();
+            set(ref(db, 'notifications/' + nId), { 
+                id: nId, 
+                text: `💬 האדמין הגיב לפרויקט: ${file.displayName} (v${vData.version})`, 
+                read: false,
+                target: 'client',
+                clientId: file.clientId
+            });
+            
+            input.value = '';
         }
 
         window.toggleNotifications = function() {
@@ -350,7 +434,11 @@
         function renderNotifications() {
             const list = document.getElementById('notifList');
             list.innerHTML = '';
-            getArr(globalData.notifications).reverse().forEach(n => {
+            
+            // סינון רק להתראות של אדמין (או התראות ישנות בלי target)
+            const adminNotifs = getArr(globalData.notifications).filter(n => !n.target || n.target === 'admin').reverse();
+            
+            adminNotifs.forEach(n => {
                 const div = document.createElement('div');
                 div.style = `border-bottom: 2px solid #eee; padding: 15px 0; ${!n.read ? 'font-weight: 800; background:#f0f0f0; padding:15px;' : ''} border-radius: 4px; margin-bottom: 5px;`;
                 div.innerHTML = `${n.text} <br><button style="margin-top:10px; font-size:12px; padding:5px 10px;" onclick="window.markRead('${n.id}')">סמן כנקרא</button>`;
@@ -363,8 +451,8 @@
         }
 
         function updateNotifCount() {
-            const unread = getArr(globalData.notifications).filter(n => !n.read).length;
-            document.getElementById('notifCount').innerText = unread;
+            const adminNotifs = getArr(globalData.notifications).filter(n => (!n.target || n.target === 'admin') && !n.read);
+            document.getElementById('notifCount').innerText = adminNotifs.length;
         }
 
         window.closeModal = function() { 
