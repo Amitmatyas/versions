@@ -1,0 +1,376 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <title>פאנל ניהול - Admin</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Heebo:wght@300;400;600;800&display=swap" rel="stylesheet">
+    <style>
+        :root { 
+            --bg: #f4f4f5; 
+            --panel-bg: #ffffff;
+            --fg: #000000; 
+            --border: 3px solid #000; 
+            --radius: 8px;
+            --shadow: 5px 5px 0px #000;
+            --shadow-hover: 2px 2px 0px #000;
+        }
+        
+        * { box-sizing: border-box; font-family: 'Heebo', sans-serif; }
+        body { background: var(--bg); color: var(--fg); margin: 0; padding: 30px; transition: all 0.3s ease; }
+        
+        h1, h2, h3 { font-weight: 800; text-transform: uppercase; margin-top: 0; }
+        
+        button { background: var(--bg); color: var(--fg); border: var(--border); border-radius: var(--radius); padding: 10px 20px; font-weight: 600; font-size: 15px; cursor: pointer; box-shadow: var(--shadow); transition: 0.1s ease-in-out; }
+        button:hover { transform: translate(3px, 3px); box-shadow: var(--shadow-hover); background: #e0e0e0; }
+        button:active { transform: translate(5px, 5px); box-shadow: 0px 0px 0px #000; }
+        
+        input, textarea, select { border: var(--border); border-radius: var(--radius); padding: 12px; margin-bottom: 15px; width: 100%; background: var(--panel-bg); color: var(--fg); outline: none; font-size: 15px; font-weight: 400; transition: 0.2s; }
+        input:focus, textarea:focus { box-shadow: var(--shadow); transform: translate(-2px, -2px); }
+        
+        .header { display: flex; justify-content: space-between; align-items: center; border-bottom: var(--border); padding-bottom: 20px; margin-bottom: 40px; }
+        .grid { display: grid; grid-template-columns: 1fr 3fr; gap: 40px; }
+        
+        .panel { background: var(--panel-bg); border: var(--border); border-radius: var(--radius); padding: 25px; box-shadow: var(--shadow); animation: fadeIn 0.5s ease; }
+        
+        .item-list { list-style: none; padding: 0; margin: 0; }
+        .item-list li { border-bottom: 2px solid #000; padding: 15px 0; cursor: pointer; transition: 0.2s; font-weight: 600; font-size: 16px; display: flex; justify-content: space-between; align-items: center; }
+        .item-list li:hover { padding-right: 15px; background: #f9f9f9; }
+        .item-list li:last-child { border-bottom: none; }
+        
+        .file-card { background: var(--bg); border: var(--border); border-radius: var(--radius); padding: 20px; margin-bottom: 25px; box-shadow: var(--shadow); animation: slideUp 0.4s ease; }
+        .file-actions { margin-bottom: 15px; display: flex; gap: 15px; flex-wrap: wrap; }
+        
+        .badge { display: inline-block; padding: 4px 12px; border: 2px solid #000; border-radius: 20px; font-size: 13px; font-weight: 600; margin-right: 15px; background: #fff; }
+        
+        .notification-center { display: none; position: fixed; top: 90px; left: 30px; width: 350px; background: var(--panel-bg); border: var(--border); border-radius: var(--radius); box-shadow: -8px 8px 0 #000; padding: 20px; z-index: 100; max-height: 400px; overflow-y: auto; }
+        
+        .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); z-index: 1000; justify-content: center; align-items: center; backdrop-filter: blur(4px); }
+        .modal-content { background: var(--panel-bg); border: var(--border); border-radius: var(--radius); padding: 40px; width: 85%; max-width: 900px; max-height: 90vh; overflow-y: auto; box-shadow: 12px 12px 0 #000; animation: popIn 0.3s ease; }
+        .close-btn { float: left; cursor: pointer; font-size: 24px; font-weight: 800; background: #000; color: #fff; width: 40px; height: 40px; display: flex; justify-content: center; align-items: center; border-radius: 50%; transition: 0.2s; }
+        .close-btn:hover { background: #d32f2f; transform: rotate(90deg); }
+        
+        .comment-box { border-top: 2px dashed #000; margin-top: 20px; padding-top: 20px; }
+        .comment { margin-bottom: 15px; font-size: 15px; background: #fff; border: 2px solid #000; border-radius: 6px; padding: 10px; }
+        .comment strong { background: #000; color: #fff; padding: 3px 8px; border-radius: 4px; margin-left: 8px; }
+
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        @keyframes slideUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+        @keyframes popIn { from { transform: scale(0.95); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+    </style>
+</head>
+<body>
+
+    <div class="header">
+        <h1>Admin.Panel</h1>
+        <div>
+            <button onclick="window.toggleNotifications()">מרכז התראות <span id="notifCount" style="background:#000; color:#fff; padding:2px 6px; border-radius:4px;">0</span></button>
+        </div>
+    </div>
+
+    <div class="notification-center" id="notifCenter">
+        <h3>התראות מלקוחות</h3>
+        <div id="notifList"></div>
+    </div>
+
+    <div class="grid">
+        <div class="panel">
+            <h3>לקוחות</h3>
+            <input type="text" id="newClientName" placeholder="שם לקוח חדש (ללא רווחים)">
+            <button onclick="window.addClient()" style="width: 100%; margin-bottom: 20px;">צור לקוח</button>
+            <ul class="item-list" id="clientList"></ul>
+        </div>
+
+        <div class="panel" id="workspace" style="display: none;">
+            <h2 id="currentClientTitle" style="border-bottom: 3px solid #000; padding-bottom: 10px; display: inline-block;"></h2>
+            <div style="display: flex; gap: 15px; margin-top: 20px;">
+                <input type="text" id="filePhysical" placeholder="שם פיזי (ללא סיומת)">
+                <input type="text" id="fileDisplay" placeholder="שם תצוגה">
+                <button onclick="window.addFile()" style="white-space: nowrap; height: 52px;">צור קובץ</button>
+            </div>
+            <div id="filesContainer" style="margin-top: 40px;"></div>
+        </div>
+    </div>
+
+    <div class="modal" id="modal">
+        <div class="modal-content">
+            <span class="close-btn" onclick="window.closeModal()">X</span>
+            <h2 id="modalTitle"></h2>
+            <div id="modalBody"></div>
+        </div>
+    </div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+        import { getDatabase, ref, set, onValue, update } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
+
+        // === הגדרת הטוקן של Netlify קבוע בקוד ===
+        const NETLIFY_TOKEN = 'YOUR_NETLIFY_TOKEN_HERE'; 
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyBr4kDzw3n5PDu2pbZ3MItnCxi8YJFCRIQ",
+            authDomain: "schoolmangers.firebaseapp.com",
+            databaseURL: "https://schoolmangers-default-rtdb.firebaseio.com",
+            projectId: "schoolmangers",
+            storageBucket: "schoolmangers.firebasestorage.app",
+            messagingSenderId: "894509181268",
+            appId: "1:894509181268:web:c8ac6305f23fa003e3c0c1",
+            measurementId: "G-BE0R2WQ35J"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getDatabase(app);
+
+        let globalData = { clients: {}, files: {}, versions: {}, comments: {}, notifications: {} };
+        let currentClientId = null;
+
+        onValue(ref(db, '/'), (snapshot) => {
+            const data = snapshot.val();
+            if (data) {
+                globalData = {
+                    clients: data.clients || {},
+                    files: data.files || {},
+                    versions: data.versions || {},
+                    comments: data.comments || {},
+                    notifications: data.notifications || {}
+                };
+            }
+            
+            renderClients();
+            updateNotifCount();
+            renderNotifications();
+            if(currentClientId) renderFiles();
+            
+            const modalTitle = document.getElementById('modalTitle').innerText;
+            if(modalTitle === 'היסטוריית גרסאות' && window.currentOpenFileId) {
+                window.openHistory(window.currentOpenFileId);
+            }
+        });
+
+        function getArr(obj) { return Object.values(obj || {}); }
+
+        window.addClient = function() {
+            const name = document.getElementById('newClientName').value.trim();
+            if(!name) return;
+            const id = 'c_' + Date.now();
+            set(ref(db, 'clients/' + id), { id, name });
+            document.getElementById('newClientName').value = '';
+        }
+
+        function renderClients() {
+            const list = document.getElementById('clientList');
+            list.innerHTML = '';
+            getArr(globalData.clients).forEach(c => {
+                const li = document.createElement('li');
+                li.innerText = c.name;
+                li.onclick = () => window.selectClient(c);
+                list.appendChild(li);
+            });
+        }
+
+        window.selectClient = function(client) {
+            currentClientId = client.id;
+            document.getElementById('workspace').style.display = 'block';
+            document.getElementById('currentClientTitle').innerText = `סביבת לקוח: ${client.name}`;
+            renderFiles();
+        }
+
+        window.addFile = function() {
+            const phys = document.getElementById('filePhysical').value.trim();
+            const disp = document.getElementById('fileDisplay').value.trim();
+            if(!phys || !disp) return;
+            const id = 'f_' + Date.now();
+            set(ref(db, 'files/' + id), { id, clientId: currentClientId, physicalName: phys, displayName: disp, netlifySiteId: null });
+            document.getElementById('filePhysical').value = '';
+            document.getElementById('fileDisplay').value = '';
+        }
+
+        function renderFiles() {
+            const container = document.getElementById('filesContainer');
+            container.innerHTML = '';
+            const clientFiles = getArr(globalData.files).filter(f => f.clientId === currentClientId);
+            
+            clientFiles.forEach(f => {
+                const versions = getArr(globalData.versions).filter(v => v.fileId === f.id);
+                const latestV = versions.length > 0 ? versions[versions.length - 1] : null;
+                const statusStr = latestV ? `v${latestV.version} - ${latestV.status === 'approved' ? 'מאושר' : 'ממתין'}` : 'אין גרסאות';
+                
+                const card = document.createElement('div');
+                card.className = 'file-card';
+                card.innerHTML = `
+                    <h3>${f.displayName} <span style="font-size: 14px; color: #555; font-weight: 400;">(${f.physicalName})</span></h3>
+                    <div style="margin-bottom: 20px;">
+                        <span class="badge">${statusStr}</span>
+                    </div>
+                    <div class="file-actions">
+                        <button onclick="window.openEditor('${f.id}')">✏️ עריכת קוד והעלאה</button>
+                        <button onclick="window.downloadLatest('${f.id}')">⬇️ הורדה</button>
+                        <button onclick="window.openHistory('${f.id}')">🕒 היסטוריית גרסאות</button>
+                    </div>
+                    <div class="comment-box" id="comments_${f.id}"></div>
+                `;
+                container.appendChild(card);
+                renderComments(f.id, latestV ? latestV.id : null);
+            });
+        }
+
+        window.openEditor = function(fileId) {
+            const f = globalData.files[fileId];
+            const versions = getArr(globalData.versions).filter(v => v.fileId === f.id);
+            const vNum = versions.length + 1;
+            const prevCode = versions.length > 0 ? versions[versions.length-1].code : '<!DOCTYPE html>\n<html>\n<head>\n<title>Title</title>\n</head>\n<body>\n<h1>Hello</h1>\n</body>\n</html>';
+
+            document.getElementById('modalTitle').innerText = `עריכה: ${f.physicalName}-v${vNum}`;
+            document.getElementById('modalBody').innerHTML = `
+                <textarea id="codeEditor" style="height: 350px; font-family: monospace; font-size: 14px;" dir="ltr">${prevCode}</textarea>
+                <button onclick="window.deployCode('${fileId}', ${vNum})" id="deployBtn" style="background:#000; color:#fff; width:100%; height:50px; font-size:18px;">שמור והעלה ל-Netlify</button>
+                <div id="deployStatus" style="margin-top: 15px; font-weight: 800; text-align: center; font-size: 18px;"></div>
+            `;
+            document.getElementById('modal').style.display = 'flex';
+        }
+
+        window.deployCode = async function(fileId, vNum) {
+            if(!NETLIFY_TOKEN || NETLIFY_TOKEN === 'YOUR_NETLIFY_TOKEN_HERE') return alert('אנא הגדר NETLIFY_TOKEN בקוד');
+            
+            const code = document.getElementById('codeEditor').value;
+            const btn = document.getElementById('deployBtn');
+            const status = document.getElementById('deployStatus');
+            const file = globalData.files[fileId];
+            
+            btn.disabled = true;
+            status.innerText = 'מכין העלאה... ⏳';
+
+            try {
+                const buffer = new TextEncoder().encode(code);
+                const hashBuffer = await crypto.subtle.digest('SHA-1', buffer);
+                const hashArray = Array.from(new Uint8Array(hashBuffer));
+                const sha1 = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+
+                let siteId = file.netlifySiteId;
+
+                if(!siteId) {
+                    status.innerText = 'יוצר סביבה ב-Netlify... 🏗️';
+                    const res = await fetch('https://api.netlify.com/api/v1/sites', {
+                        method: 'POST',
+                        headers: { 'Authorization': `Bearer ${NETLIFY_TOKEN}`, 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ name: `min-sys-${Date.now()}` })
+                    });
+                    const data = await res.json();
+                    siteId = data.site_id;
+                    update(ref(db, `files/${fileId}`), { netlifySiteId: siteId });
+                }
+
+                status.innerText = 'מעלה גרסה חדשה... 🚀';
+                const fName = `/${file.physicalName}-v${vNum}.html`;
+                
+                const deployRes = await fetch(`https://api.netlify.com/api/v1/sites/${siteId}/deploys`, {
+                    method: 'POST',
+                    headers: { 'Authorization': `Bearer ${NETLIFY_TOKEN}`, 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ files: { [fName]: sha1 } })
+                });
+                const deployData = await deployRes.json();
+                
+                await fetch(`https://api.netlify.com/api/v1/deploys/${deployData.id}/files${fName}`, {
+                    method: 'PUT',
+                    headers: { 'Authorization': `Bearer ${NETLIFY_TOKEN}`, 'Content-Type': 'application/octet-stream' },
+                    body: code
+                });
+
+                const url = deployData.deploy_ssl_url || deployData.deploy_url;
+                const vId = 'v_' + Date.now();
+                
+                set(ref(db, 'versions/' + vId), {
+                    id: vId, fileId: fileId, version: vNum, code: code,
+                    url: url + fName, isHidden: false, status: 'pending'
+                });
+                
+                status.innerText = 'הועלה בהצלחה! ✅';
+                setTimeout(() => { window.closeModal(); }, 1500);
+
+            } catch (err) {
+                status.innerText = 'שגיאה: ' + err.message + ' ❌';
+                btn.disabled = false;
+            }
+        }
+
+        window.openHistory = function(fileId) {
+            window.currentOpenFileId = fileId;
+            const versions = getArr(globalData.versions).filter(v => v.fileId === fileId);
+            document.getElementById('modalTitle').innerText = 'היסטוריית גרסאות';
+            let html = '<ul class="item-list">';
+            versions.forEach(v => {
+                html += `
+                <li>
+                    <span><strong>v${v.version}</strong> - ${v.status === 'approved' ? '✅ מאושר' : '⏳ ממתין'}</span>
+                    <div style="display:flex; gap:10px;">
+                        <button onclick="window.open('${v.url}', '_blank')">צפה</button>
+                        <button onclick="window.toggleHide('${v.id}')">${v.isHidden ? '👁️ הצג ללקוח' : '🙈 הסתר מלקוח'}</button>
+                    </div>
+                </li>`;
+            });
+            html += '</ul>';
+            document.getElementById('modalBody').innerHTML = html;
+            document.getElementById('modal').style.display = 'flex';
+        }
+
+        window.toggleHide = function(vid) {
+            const isHidden = globalData.versions[vid].isHidden;
+            update(ref(db, `versions/${vid}`), { isHidden: !isHidden });
+        }
+
+        window.downloadLatest = function(fileId) {
+            const versions = getArr(globalData.versions).filter(v => v.fileId === fileId);
+            if(versions.length === 0) return alert('אין גרסאות');
+            const v = versions[versions.length - 1];
+            const f = globalData.files[fileId];
+            const blob = new Blob([v.code], { type: 'text/html' });
+            const a = document.createElement('a');
+            a.href = URL.createObjectURL(blob);
+            a.download = `${f.physicalName}-v${v.version}.html`;
+            a.click();
+        }
+
+        function renderComments(fileId, versionId) {
+            const box = document.getElementById(`comments_${fileId}`);
+            if(!versionId || !box) return;
+            const comms = getArr(globalData.comments).filter(c => c.versionId === versionId);
+            let html = '<h4>הערות גרסה אחרונה:</h4>';
+            comms.forEach(c => {
+                html += `<div class="comment"><strong>${c.author === 'admin' ? 'אני' : 'לקוח'}</strong> ${c.text}</div>`;
+            });
+            box.innerHTML = html;
+        }
+
+        window.toggleNotifications = function() {
+            const nc = document.getElementById('notifCenter');
+            nc.style.display = nc.style.display === 'block' ? 'none' : 'block';
+        }
+
+        function renderNotifications() {
+            const list = document.getElementById('notifList');
+            list.innerHTML = '';
+            getArr(globalData.notifications).reverse().forEach(n => {
+                const div = document.createElement('div');
+                div.style = `border-bottom: 2px solid #eee; padding: 15px 0; ${!n.read ? 'font-weight: 800; background:#f0f0f0; padding:15px;' : ''} border-radius: 4px; margin-bottom: 5px;`;
+                div.innerHTML = `${n.text} <br><button style="margin-top:10px; font-size:12px; padding:5px 10px;" onclick="window.markRead('${n.id}')">סמן כנקרא</button>`;
+                list.appendChild(div);
+            });
+        }
+
+        window.markRead = function(id) {
+            update(ref(db, `notifications/${id}`), { read: true });
+        }
+
+        function updateNotifCount() {
+            const unread = getArr(globalData.notifications).filter(n => !n.read).length;
+            document.getElementById('notifCount').innerText = unread;
+        }
+
+        window.closeModal = function() { 
+            document.getElementById('modal').style.display = 'none';
+            window.currentOpenFileId = null;
+        }
+    </script>
+</body>
+</html>
