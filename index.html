@@ -178,10 +178,6 @@
                 return false;
             }
 
-            // אחרי הדומיין חייב להיות /admin
-            const pathOk = refUrl.pathname.toLowerCase().startsWith('/admin');
-            if (!pathOk) return false;
-
             // הכתובת שממנה הגיעו חייבת להכיל את שם הלקוח, בכל וריאציה (רווחים/מקפים/אותיות גדולות-קטנות)
             const nameOk = normalizeForCompare(referrer).includes(normalizeForCompare(clientName));
 
@@ -193,13 +189,13 @@
             client = getArr(globalData.clients).find(c => c.name === hash);
             
             if(!client) {
-                document.getElementById('welcomeTitle').innerText = 'לקוח לא נמצא. אנא ודא את הכתובת (למשל #שם_לקוח).';
+                document.getElementById('welcomeTitle').innerText = 'לקוח לא נמצא.';
                 document.getElementById('fileList').innerHTML = '';
                 return;
             }
 
             if (!isReferrerAuthorized(client.name)) {
-                document.getElementById('welcomeTitle').innerText = 'הגישה חסומה. יש להיכנס דרך הקישור באדמין.';
+                document.getElementById('welcomeTitle').innerText = 'הגישה חסומה.';
                 document.getElementById('fileList').innerHTML = '';
                 client = null;
                 return;
