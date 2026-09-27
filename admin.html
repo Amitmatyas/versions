@@ -230,19 +230,24 @@
             clientFiles.forEach(f => {
                 const versions = getArr(globalData.versions).filter(v => v.fileId === f.id);
                 const latestV = versions.length > 0 ? versions[versions.length - 1] : null;
-                const statusStr = latestV ? `v${latestV.version} - ${latestV.status === 'approved' ? 'מאושר' : 'ממתין'}` : 'אין גרסאות';
+                const isScheduledActive = f.scheduled && new Date(f.scheduled.time).getTime() > Date.now();
+                const statusStr = isScheduledActive
+                    ? `🕒 גרסה נוכחית - מתוזמנת ל-${new Date(f.scheduled.time).toLocaleString('he-IL')}`
+                    : (latestV ? `v${latestV.version} - ${latestV.status === 'approved' ? 'מאושר' : 'ממתין'}` : 'אין גרסאות');
                 
                 const card = document.createElement('div');
                 card.className = 'file-card';
                 card.innerHTML = `
                     <h3>${f.displayName} <span style="font-size: 14px; color: #555; font-weight: 600;">(${f.physicalName})</span></h3>
                     <div style="margin-bottom: 20px;">
-                        <span class="badge">${statusStr}</span>
+                        <span class="badge" style="${isScheduledActive ? 'background:#e0e7ff;' : ''}">${statusStr}</span>
                     </div>
                     <div class="file-actions">
                         <button onclick="window.openEditor('${f.id}')">✏️ עריכת קוד והעלאה</button>
                         <button onclick="window.downloadLatest('${f.id}')">⬇️ הורדה</button>
                         <button onclick="window.openHistory('${f.id}')">🕒 היסטוריית גרסאות</button>
+                        <button onclick="window.openSchedule('${f.id}')" style="background:#e0e7ff;">📅 תזמון העלאה</button>
+                        ${f.scheduled ? `<button onclick="window.cancelSchedule('${f.id}')" style="background:#fee2e2;">❌ בטל תזמון</button>` : ''}
                     </div>
                     <div class="comment-box" id="comments_${f.id}"></div>
                 `;
@@ -251,13 +256,24 @@
             });
         }
 
-        window.openEditor = function(fileId) {
+        window.openEditor = async function(fileId) {
             const f = globalData.files[fileId];
             const versions = getArr(globalData.versions).filter(v => v.fileId === f.id);
             const vNum = versions.length + 1;
-            const prevCode = versions.length > 0 ? versions[versions.length-1].code : '<!DOCTYPE html>\n<html>\n<head>\n<title>Title</title>\n</head>\n<body>\n<h1>Hello</h1>\n</body>\n</html>';
 
             document.getElementById('modalTitle').innerText = `עריכה: ${f.physicalName}-v${vNum}`;
+            document.getElementById('modalBody').innerHTML = `<div style="text-align:center; padding:30px; font-weight:800;">טוען קוד קודם... ⏳</div>`;
+            document.getElementById('modal').style.display = 'flex';
+
+            let prevCode = '<!DOCTYPE html>\n<html>\n<head>\n<title>Title</title>\n</head>\n<body>\n<h1>Hello</h1>\n</body>\n</html>';
+            if (versions.length > 0) {
+                try {
+                    prevCode = await fetch(versions[versions.length - 1].url).then(r => r.text());
+                } catch (err) {
+                    prevCode = '<!-- שגיאה בטעינת הקוד הקודם מהשרת: ' + err.message + ' -->';
+                }
+            }
+
             document.getElementById('modalBody').innerHTML = `
                 <div style="background: #eef2f3; padding: 15px; border: 2px dashed #000; border-radius: 8px; margin-bottom: 15px;">
                     <label style="font-weight: 800; display: block; margin-bottom: 10px;">📁 העלה קובץ HTML מהמחשב (יחליף את הקוד למטה):</label>
@@ -333,7 +349,7 @@
                 const vId = 'v_' + Date.now();
                 
                 set(ref(db, 'versions/' + vId), {
-                    id: vId, fileId: fileId, version: vNum, code: code,
+                    id: vId, fileId: fileId, version: vNum,
                     url: url + fName, isHidden: false, status: 'pending'
                 });
                 
@@ -371,16 +387,223 @@
             update(ref(db, `versions/${vid}`), { isHidden: !isHidden });
         }
 
-        window.downloadLatest = function(fileId) {
+        window.downloadLatest = async function(fileId) {
             const versions = getArr(globalData.versions).filter(v => v.fileId === fileId);
             if(versions.length === 0) return alert('אין גרסאות');
             const v = versions[versions.length - 1];
             const f = globalData.files[fileId];
-            const blob = new Blob([v.code], { type: 'text/html' });
-            const a = document.createElement('a');
-            a.href = URL.createObjectURL(blob);
-            a.download = `${f.physicalName}-v${v.version}.html`;
-            a.click();
+            try {
+                const code = await fetch(v.url).then(r => r.text());
+                const blob = new Blob([code], { type: 'text/html' });
+                const a = document.createElement('a');
+                a.href = URL.createObjectURL(blob);
+                a.download = `${f.physicalName}-v${v.version}.html`;
+                a.click();
+            } catch (err) {
+                alert('שגיאה בהורדת הקוד: ' + err.message);
+            }
+        }
+
+        // תבנית עמוד "ספירה לאחור" שמוצגת ללקוח עד למועד העדכון המתוזמן
+        const COUNTDOWN_TEMPLATE = `<!DOCTYPE html>
+<html lang="he" dir="rtl" class="h-full">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>יתעדכן בקרוב - ספירה לאחור</title>
+    <script src="https://cdn.tailwindcss.com"><\/script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Heebo:wght@300;400;500;700&family=Rubik:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script>
+        tailwind.config = { theme: { extend: { fontFamily: { rubik: ['Rubik', 'sans-serif'], heebo: ['Heebo', 'sans-serif'] } } } }
+    <\/script>
+    <style>
+        body { font-family: 'Rubik', 'Heebo', sans-serif; background-color: #090d16; overflow-x: hidden; }
+        @keyframes subtleFloat { 0%, 100% { transform: translateY(0px); } 50% { transform: translateY(-12px); } }
+        .animate-float { animation: subtleFloat 4.5s ease-in-out infinite; }
+        @keyframes pulseGlow { 0%, 100% { opacity: 0.3; transform: scale(1); } 50% { opacity: 0.55; transform: scale(1.1); } }
+        .animate-glow { animation: pulseGlow 7s ease-in-out infinite alternate; }
+        @keyframes entranceScale { 0% { opacity: 0; transform: scale(0.92) translateY(25px); } 100% { opacity: 1; transform: scale(1) translateY(0); } }
+        .animate-entrance { animation: entranceScale 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
+        .white-card-shadow { box-shadow: 0 25px 50px -12px rgba(0,0,0,0.45), 0 0 60px -15px rgba(99,102,241,0.22), 0 0 0 1px rgba(255,255,255,0.9) inset; }
+        .grey-card-shadow { box-shadow: 0 10px 25px -5px rgba(0,0,0,0.08), 0 2px 6px -2px rgba(0,0,0,0.04), 0 0 0 1px rgba(203,213,225,0.8) inset; }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col items-center justify-center p-4 sm:p-6 relative text-slate-100 antialiased selection:bg-indigo-500 selection:text-white">
+    <div class="fixed inset-0 pointer-events-none overflow-hidden z-0">
+        <div class="absolute -top-40 -right-40 w-[450px] h-[450px] bg-indigo-600/30 rounded-full blur-[130px] animate-glow"></div>
+        <div class="absolute -bottom-40 -left-40 w-[450px] h-[450px] bg-blue-600/25 rounded-full blur-[140px] animate-glow" style="animation-delay: -3.5s;"></div>
+        <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-purple-600/15 rounded-full blur-[160px] animate-glow" style="animation-delay: -5s;"></div>
+        <div class="absolute inset-0 bg-[radial-gradient(#334155_1px,transparent_1px)] [background-size:28px_28px] opacity-25"></div>
+    </div>
+    <main class="relative z-10 w-full max-w-lg mx-auto flex flex-col items-center">
+        <div class="w-full animate-float">
+            <div class="animate-entrance flex flex-col items-center">
+                <div class="w-full bg-white rounded-3xl p-6 sm:p-10 md:p-12 text-center white-card-shadow border border-white/70 transition-all duration-300 hover:scale-[1.01] relative overflow-hidden">
+                    <h1 class="text-3xl sm:text-4xl md:text-5xl font-black text-slate-900 tracking-tight leading-none mb-6 sm:mb-8">הקוד יתעדכן ב:</h1>
+                    <div class="flex justify-center w-full">
+                        <div class="w-full max-w-md bg-slate-100 hover:bg-slate-100/90 transition-all duration-300 rounded-2xl p-4 sm:p-5 grey-card-shadow border border-slate-200/90">
+                            <div id="countdown-timer" class="grid grid-cols-4 gap-2 sm:gap-3 text-center items-center">
+                                <div class="bg-white/80 rounded-xl p-2 sm:p-3 border border-slate-200/60 shadow-sm flex flex-col items-center justify-center">
+                                    <span id="days" class="text-xl sm:text-3xl font-black text-slate-800 tabular-nums leading-tight">00</span>
+                                    <span class="text-[11px] sm:text-xs font-bold text-slate-500 mt-1">ימים</span>
+                                </div>
+                                <div class="bg-white/80 rounded-xl p-2 sm:p-3 border border-slate-200/60 shadow-sm flex flex-col items-center justify-center">
+                                    <span id="hours" class="text-xl sm:text-3xl font-black text-slate-800 tabular-nums leading-tight">00</span>
+                                    <span class="text-[11px] sm:text-xs font-bold text-slate-500 mt-1">שעות</span>
+                                </div>
+                                <div class="bg-white/80 rounded-xl p-2 sm:p-3 border border-slate-200/60 shadow-sm flex flex-col items-center justify-center">
+                                    <span id="minutes" class="text-xl sm:text-3xl font-black text-slate-800 tabular-nums leading-tight">00</span>
+                                    <span class="text-[11px] sm:text-xs font-bold text-slate-500 mt-1">דקות</span>
+                                </div>
+                                <div class="bg-white/80 rounded-xl p-2 sm:p-3 border border-slate-200/60 shadow-sm flex flex-col items-center justify-center bg-indigo-50/30">
+                                    <span id="seconds" class="text-xl sm:text-3xl font-black text-indigo-600 tabular-nums leading-tight">00</span>
+                                    <span class="text-[11px] sm:text-xs font-bold text-slate-500 mt-1">שניות</span>
+                                </div>
+                            </div>
+                            <div id="finished-message" class="hidden py-2 text-center">
+                                <span class="text-2xl sm:text-3xl font-black text-emerald-600 flex items-center justify-center gap-2">
+                                    <i class="fa-solid fa-circle-check"></i>
+                                    הגיעה השעה!
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="mt-4 text-xs sm:text-sm font-medium text-slate-400 flex items-center justify-center gap-1.5">
+                        <i class="fa-regular fa-clock text-indigo-500"></i>
+                        <span>__CAPTION__</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+    <script>
+        const targetDate = new Date(__YEAR__, __MONTH__, __DAY__, __HOUR__, __MINUTE__, 0).getTime();
+        function padZero(num) { return num < 10 ? '0' + num : num; }
+        function updateCountdown() {
+            const now = new Date().getTime();
+            const timeDifference = targetDate - now;
+            const timerElement = document.getElementById('countdown-timer');
+            const finishedMessageElement = document.getElementById('finished-message');
+            if (timeDifference <= 0) {
+                if (timerElement) timerElement.classList.add('hidden');
+                if (finishedMessageElement) finishedMessageElement.classList.remove('hidden');
+                return;
+            }
+            const days = Math.floor(timeDifference / (1000 * 60 * 60 * 24));
+            const hours = Math.floor((timeDifference % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+            const minutes = Math.floor((timeDifference % (1000 * 60 * 60)) / (1000 * 60));
+            const seconds = Math.floor((timeDifference % (1000 * 60)) / 1000);
+            document.getElementById('days').textContent = padZero(days);
+            document.getElementById('hours').textContent = padZero(hours);
+            document.getElementById('minutes').textContent = padZero(minutes);
+            document.getElementById('seconds').textContent = padZero(seconds);
+        }
+        updateCountdown();
+        setInterval(updateCountdown, 1000);
+    <\/script>
+</body>
+</html>`;
+
+        function buildCountdownHtml(dt) {
+            const year = dt.getFullYear();
+            const month = dt.getMonth(); // 0-indexed, matches new Date(y, m, d, h, min)
+            const day = dt.getDate();
+            const hour = dt.getHours();
+            const minute = dt.getMinutes();
+            const pad = n => n < 10 ? '0' + n : '' + n;
+            const caption = `${day}.${month + 1}.${year} בשעה ${pad(hour)}:${pad(minute)}`;
+            return COUNTDOWN_TEMPLATE
+                .replace('__YEAR__', year)
+                .replace('__MONTH__', month)
+                .replace('__DAY__', day)
+                .replace('__HOUR__', hour)
+                .replace('__MINUTE__', minute)
+                .replace('__CAPTION__', caption);
+        }
+
+        window.openSchedule = function(fileId) {
+            const f = globalData.files[fileId];
+            document.getElementById('modalTitle').innerText = `תזמון העלאה: ${f.physicalName}`;
+            document.getElementById('modalBody').innerHTML = `
+                <label style="font-weight: 800; display:block; margin-bottom:10px;">🗓️ תאריך ושעה לעדכון:</label>
+                <input type="datetime-local" id="scheduleDateTime" style="margin-bottom:20px;">
+                <button onclick="window.saveSchedule('${fileId}')" id="scheduleBtn" style="background:#000; color:#fff; width:100%; height:50px; font-size:18px;">שמור תזמון 📅</button>
+                <div id="scheduleStatus" style="margin-top: 15px; font-weight: 800; text-align: center; font-size: 18px;"></div>
+            `;
+            document.getElementById('modal').style.display = 'flex';
+        }
+
+        window.saveSchedule = async function(fileId) {
+            const dtInput = document.getElementById('scheduleDateTime');
+            const status = document.getElementById('scheduleStatus');
+            const btn = document.getElementById('scheduleBtn');
+
+            if(!dtInput.value) return alert('יש לבחור תאריך ושעה');
+
+            btn.disabled = true;
+            status.innerText = 'מעלה... ⏳';
+
+            try {
+                const targetDt = new Date(dtInput.value);
+                const code = buildCountdownHtml(targetDt);
+                const file = globalData.files[fileId];
+
+                const buffer = new TextEncoder().encode(code);
+                const hashBuffer = await crypto.subtle.digest('SHA-1', buffer);
+                const hashArray = Array.from(new Uint8Array(hashBuffer));
+                const sha1 = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+
+                let siteId = file.netlifySiteId;
+                if(!siteId) {
+                    status.innerText = 'יוצר סביבה ב-Netlify... 🏗️';
+                    const res = await fetch('https://api.netlify.com/api/v1/sites', {
+                        method: 'POST',
+                        headers: { 'Authorization': `Bearer ${NETLIFY_TOKEN}`, 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ name: `min-sys-${Date.now()}` })
+                    });
+                    const data = await res.json();
+                    siteId = data.site_id;
+                    update(ref(db, `files/${fileId}`), { netlifySiteId: siteId });
+                }
+
+                status.innerText = 'מעלה עמוד ספירה לאחור... 🚀';
+                const fName = `/${file.physicalName}-scheduled.html`;
+                const deployRes = await fetch(`https://api.netlify.com/api/v1/sites/${siteId}/deploys`, {
+                    method: 'POST',
+                    headers: { 'Authorization': `Bearer ${NETLIFY_TOKEN}`, 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ files: { [fName]: sha1 } })
+                });
+                const deployData = await deployRes.json();
+
+                await fetch(`https://api.netlify.com/api/v1/deploys/${deployData.id}/files${fName}`, {
+                    method: 'PUT',
+                    headers: { 'Authorization': `Bearer ${NETLIFY_TOKEN}`, 'Content-Type': 'application/octet-stream' },
+                    body: code
+                });
+
+                const url = deployData.deploy_ssl_url || deployData.deploy_url;
+                const isoTime = targetDt.toISOString();
+
+                // לא נספר כגרסה: נשמר על הקובץ עצמו, לא ברשימת versions
+                update(ref(db, `files/${fileId}`), {
+                    scheduled: { url: url + fName, time: isoTime }
+                });
+
+                status.innerText = 'התזמון נשמר בהצלחה! ✅';
+                setTimeout(() => { window.closeModal(); }, 1500);
+
+            } catch (err) {
+                status.innerText = 'שגיאה: ' + err.message + ' ❌';
+                btn.disabled = false;
+            }
+        }
+
+        window.cancelSchedule = function(fileId) {
+            if(!confirm('לבטל את התזמון?')) return;
+            update(ref(db, `files/${fileId}`), { scheduled: null });
         }
 
         function renderComments(fileId, versionId) {
