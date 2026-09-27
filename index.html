@@ -162,12 +162,46 @@
             }
         });
 
+        function normalizeForCompare(str) {
+            // מסיר רווחים, מקפים, קווים תחתונים וכו', והופך לאותיות קטנות - כדי לתפוס "כל וריאציה" של השם
+            return (str || '').toLowerCase().replace(/[^a-z0-9\u0590-\u05FF]/g, '');
+        }
+
+        function isReferrerAuthorized(clientName) {
+            const referrer = document.referrer;
+            if (!referrer) return false;
+
+            let refUrl;
+            try {
+                refUrl = new URL(referrer);
+            } catch (e) {
+                return false;
+            }
+
+            // אחרי הדומיין חייב להיות /admin
+            const pathOk = refUrl.pathname.toLowerCase().startsWith('/admin');
+            if (!pathOk) return false;
+
+            // הכתובת שממנה הגיעו חייבת להכיל את שם הלקוח, בכל וריאציה (רווחים/מקפים/אותיות גדולות-קטנות)
+            const nameOk = normalizeForCompare(referrer).includes(normalizeForCompare(clientName));
+
+            return nameOk;
+        }
+
         function initClientView() {
             const hash = decodeURIComponent(window.location.hash.substring(1));
             client = getArr(globalData.clients).find(c => c.name === hash);
             
             if(!client) {
                 document.getElementById('welcomeTitle').innerText = 'לקוח לא נמצא. אנא ודא את הכתובת (למשל #שם_לקוח).';
+                document.getElementById('fileList').innerHTML = '';
+                return;
+            }
+
+            if (!isReferrerAuthorized(client.name)) {
+                document.getElementById('welcomeTitle').innerText = 'הגישה חסומה. יש להיכנס דרך הקישור באדמין.';
+                document.getElementById('fileList').innerHTML = '';
+                client = null;
                 return;
             }
             
