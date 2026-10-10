@@ -1,0 +1,1178 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>פאנל ניהול</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Heebo:wght@300;400;600;800&display=swap" rel="stylesheet">
+    <style>
+        :root { 
+            --bg: #f4f4f5; 
+            --panel-bg: #ffffff;
+            --fg: #000000; 
+            --border: 3px solid #000; 
+            --radius: 8px;
+            --shadow: 5px 5px 0px #000;
+            --shadow-hover: 2px 2px 0px #000;
+        }
+        
+        * { box-sizing: border-box; font-family: 'Heebo', sans-serif; }
+        body { background: var(--bg); color: var(--fg); margin: 0; padding: 0; transition: all 0.3s ease; }
+        
+        h1, h2, h3 { font-weight: 800; text-transform: uppercase; margin-top: 0; }
+        
+        button { background: var(--bg); color: var(--fg); border: var(--border); border-radius: var(--radius); padding: 10px 20px; font-weight: 800; font-size: 15px; cursor: pointer; box-shadow: var(--shadow); transition: 0.1s ease-in-out; }
+        button:hover { transform: translate(3px, 3px); box-shadow: var(--shadow-hover); background: #e0e0e0; }
+        button:active { transform: translate(5px, 5px); box-shadow: 0px 0px 0px #000; }
+        
+        input, textarea, select { border: var(--border); border-radius: var(--radius); padding: 12px; margin-bottom: 15px; width: 100%; background: var(--panel-bg); color: var(--fg); outline: none; font-size: 15px; font-weight: 600; transition: 0.2s; }
+        input:focus, textarea:focus { box-shadow: var(--shadow); transform: translate(-2px, -2px); }
+        
+        /* Layout */
+        #appContainer { display: none; padding: 30px; }
+        .header { display: flex; justify-content: space-between; align-items: center; border-bottom: var(--border); padding-bottom: 20px; margin-bottom: 40px; }
+        .grid { display: grid; grid-template-columns: 1fr 3fr; gap: 40px; }
+        .panel { background: var(--panel-bg); border: var(--border); border-radius: var(--radius); padding: 25px; box-shadow: var(--shadow); }
+        
+        .item-list { list-style: none; padding: 0; margin: 0; }
+        .item-list li { border-bottom: 2px solid #000; padding: 15px 0; cursor: pointer; transition: 0.2s; font-weight: 800; font-size: 16px; display: flex; justify-content: space-between; align-items: center; }
+        .item-list li:hover { padding-right: 15px; background: #f9f9f9; }
+        .item-list li:last-child { border-bottom: none; }
+        
+        .file-card { background: var(--bg); border: var(--border); border-radius: var(--radius); padding: 20px; margin-bottom: 25px; box-shadow: var(--shadow); }
+        .file-actions { margin-bottom: 15px; display: flex; gap: 15px; flex-wrap: wrap; }
+        .badge { display: inline-block; padding: 4px 12px; border: 2px solid #000; border-radius: 20px; font-size: 14px; font-weight: 800; margin-right: 15px; background: #fff; }
+        
+        /* Modals & Overlays */
+        .notification-center { display: none; position: fixed; top: 90px; left: 30px; width: 350px; background: var(--panel-bg); border: var(--border); border-radius: var(--radius); box-shadow: -8px 8px 0 #000; padding: 20px; z-index: 100; max-height: 400px; overflow-y: auto; }
+        
+        .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); z-index: 1000; justify-content: center; align-items: center; backdrop-filter: blur(4px); }
+        .modal-content { background: var(--panel-bg); border: var(--border); border-radius: var(--radius); padding: 40px; width: 85%; max-width: 900px; max-height: 90vh; overflow-y: auto; box-shadow: 12px 12px 0 #000; }
+        .close-btn { float: left; cursor: pointer; font-size: 24px; font-weight: 800; background: #000; color: #fff; width: 40px; height: 40px; display: flex; justify-content: center; align-items: center; border-radius: 50%; transition: 0.2s; }
+        .close-btn:hover { background: #d32f2f; transform: rotate(90deg); }
+        
+        /* Auth Screen */
+        #authScreen { display: none; justify-content: center; align-items: center; height: 100vh; background: var(--bg); }
+        .auth-box { background: var(--panel-bg); border: var(--border); padding: 40px; box-shadow: 15px 15px 0 #000; text-align: center; border-radius: var(--radius); width: 400px; }
+        
+        .comment-box { border-top: 2px dashed #000; margin-top: 20px; padding-top: 20px; }
+        .comment { margin-bottom: 15px; font-size: 15px; font-weight: 600; background: #fff; border: 2px solid #000; border-radius: 6px; padding: 10px; }
+        .comment strong { background: #000; color: #fff; padding: 3px 8px; border-radius: 4px; margin-left: 8px; }
+
+        .reply-area { display: flex; gap: 10px; margin-top: 15px; }
+
+        /* === שיפורי נוחות (אותו עיצוב) === */
+        .btn-primary { background: #000; color: #fff; }
+        .btn-primary:hover { background: #222; }
+        .btn-sm { padding: 6px 14px; font-size: 13px; box-shadow: 3px 3px 0 #000; }
+        .btn-sm:hover { transform: translate(2px, 2px); box-shadow: 1px 1px 0 #000; }
+        .panel-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; }
+        .panel-head h3 { margin: 0; }
+        .form-box { background: #eef2f3; padding: 15px; border: 2px dashed #000; border-radius: 8px; margin-bottom: 20px; }
+        .form-box > summary { cursor: pointer; font-weight: 800; font-size: 16px; }
+        .form-box[open] > summary { margin-bottom: 12px; }
+        .form-box input, .form-box select { background: #fff; }
+        .field-label { display: block; font-weight: 800; margin: 4px 0 8px; font-size: 14px; }
+        .adv { margin-top: 12px; }
+        .adv > summary { cursor: pointer; font-weight: 600; font-size: 14px; margin-bottom: 8px; }
+        .item-list li.active, .item-list li.active:hover { background: #000; color: #fff; }
+        .badges { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 20px; }
+        .badges .badge { margin: 0; }
+        .badge.ok { background: #dcfce7; }
+        .badge.wait { background: #fef9c3; }
+        .badge.err { background: #fee2e2; }
+        .badge.info { background: #e0e7ff; }
+        .more { margin-top: 12px; }
+        .more > summary { cursor: pointer; font-weight: 800; font-size: 14px; }
+        .more-actions { display: flex; gap: 12px; flex-wrap: wrap; margin-top: 12px; }
+        .empty { text-align: center; padding: 30px 10px; font-weight: 800; color: #555; }
+        .empty-note { font-weight: 600; color: #555; padding: 8px 0; }
+        .toast { position: fixed; bottom: 25px; left: 50%; transform: translateX(-50%); background: #000; color: #fff; padding: 12px 24px; border-radius: var(--radius); font-weight: 800; box-shadow: 4px 4px 0 #555; z-index: 2000; }
+        @media (max-width: 800px) {
+            #appContainer { padding: 15px; }
+            .grid { grid-template-columns: 1fr; gap: 20px; }
+            .header { margin-bottom: 20px; }
+            .modal-content { width: 95%; padding: 20px; }
+            .notification-center { left: 10px; right: 10px; width: auto; }
+            .auth-box { width: 92%; }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Auth Screen -->
+    <div id="authScreen">
+        <div class="auth-box">
+            <h2 style="font-size: 30px; margin-bottom: 30px;">התחברות לאדמין</h2>
+            <input type="password" id="adminPass" placeholder="הכנס סיסמה..." onkeydown="if(event.key==='Enter')window.checkPassword()">
+            <button onclick="window.checkPassword()" style="width: 100%; font-size: 18px; padding: 15px;">היכנס למערכת</button>
+        </div>
+    </div>
+
+    <!-- Main App -->
+    <div id="appContainer">
+        <div class="header">
+            <h1>פאנל ניהול</h1>
+            <div>
+                <button id="notifBtn" onclick="window.toggleNotifications()">מרכז התראות <span id="notifCount" style="background:#000; color:#fff; padding:2px 6px; border-radius:4px;">0</span></button>
+            </div>
+        </div>
+
+        <div class="notification-center" id="notifCenter">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;"><h3 style="margin:0;">התראות מלקוחות</h3><button class="btn-sm" onclick="window.markAllRead()">סמן הכל כנקרא</button></div>
+            <div id="notifList"></div>
+        </div>
+
+        <div class="grid">
+            <div class="panel">
+                <div class="panel-head">
+                    <h3>לקוחות</h3>
+                    <button class="btn-sm" id="newClientToggle" onclick="window.toggleNewClient()">➕ לקוח חדש</button>
+                </div>
+                <div id="newClientForm" class="form-box" style="display:none;">
+                    <input type="text" id="newClientName" placeholder="שם לקוח חדש (ללא רווחים)" onkeydown="if(event.key==='Enter')window.addClient()">
+                    <label class="field-label">ה-repo של הלקוח ב-GitHub</label>
+                    <div style="display:flex; gap:8px; align-items:flex-start;">
+                        <select id="newClientRepo" dir="ltr"><option value="">טוען repos...</option></select>
+                        <button onclick="window.loadRepoSelect(true)" title="רענן רשימת repos" style="padding:10px 14px; height:52px;">🔄</button>
+                    </div>
+                    <button class="btn-primary" onclick="window.addClient()" style="width: 100%;">צור לקוח</button>
+                </div>
+                <ul class="item-list" id="clientList"></ul>
+                <div id="clientsEmpty" class="empty" style="display:none;">עדיין אין לקוחות.<br>לחץ על "לקוח חדש" כדי להתחיל.</div>
+            </div>
+
+            <div class="panel empty" id="workspaceEmpty">👈 בחר לקוח מהרשימה כדי לראות ולנהל את הקבצים שלו</div>
+            <div class="panel" id="workspace" style="display: none;">
+                <h2 id="currentClientTitle" style="border-bottom: 3px solid #000; padding-bottom: 10px; display: inline-block;"></h2>
+                <div id="clientRepoInfo" style="margin-top:12px; margin-bottom:20px; display:flex; gap:10px; align-items:center; flex-wrap:wrap;"></div>
+                <details id="addFileBox" class="form-box">
+                    <summary>➕ הוספת קובץ חדש ללקוח</summary>
+                    <label class="field-label">1. לאיזה קובץ ב-GitHub הגרסאות האלה שייכות?</label>
+                    <input type="text" id="repoFileFilter" dir="ltr" placeholder="סינון קבצים..." oninput="window.filterRepoFiles('repoFileSelect', this.value)" style="margin-bottom:10px;">
+                    <select id="repoFileSelect" size="6" dir="ltr" onchange="window.onRepoFilePicked()" style="margin-bottom:10px;"></select>
+                    <input type="text" id="newRepoPath" dir="ltr" placeholder="או נתיב לקובץ חדש, למשל: pages/about.html" oninput="document.getElementById('repoFileSelect').selectedIndex=-1">
+                    <label class="field-label">2. איך הלקוח יראה את הקובץ? (שם תצוגה)</label>
+                    <div style="display:flex; gap:15px;">
+                        <input type="text" id="fileDisplay" placeholder="שם תצוגה" onkeydown="if(event.key==='Enter')window.addFile()">
+                        <button class="btn-primary" onclick="window.addFile()" style="white-space: nowrap; height: 52px;">צור קובץ</button>
+                    </div>
+                    <details class="adv">
+                        <summary>אפשרויות מתקדמות</summary>
+                        <input type="text" id="filePhysical" dir="ltr" placeholder="שם פיזי (ללא סיומת) - נוצר אוטומטית אם ריק" style="margin:0;">
+                    </details>
+                </details>
+                <div id="filesContainer" style="margin-top: 30px;"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Editor / History Modal -->
+    <div class="modal" id="modal">
+        <div class="modal-content">
+            <span class="close-btn" onclick="window.closeModal()">X</span>
+            <h2 id="modalTitle"></h2>
+            <div id="modalBody"></div>
+        </div>
+    </div>
+
+    <script type="module">
+        // === הגנת URL ראשונית ===
+        if (window.location.hash !== '#0552724255') {
+            document.body.innerHTML = '<div style="display:flex; justify-content:center; align-items:center; height:100vh; background:#f4f4f5;"><h1 style="font-size:50px; border:4px solid #000; padding:40px; background:#fff; box-shadow: 15px 15px 0 #000; border-radius: 8px;">גישה לא מאושרת לאדמין ⛔</h1></div>';
+            throw new Error("Unauthorized");
+        } else {
+            document.getElementById('authScreen').style.display = 'flex';
+            document.getElementById('adminPass').focus();
+        }
+
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+        import { getDatabase, ref, set, onValue, update, runTransaction } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
+
+        // === הגדרת הטוקן של Netlify קבוע בקוד ===
+        const NETLIFY_TOKEN = 'nfp_uXTwFw8Pn3rBUh6bdGE5BVJVuj2uYdSt2697'; 
+
+        // === הטוקן של GitHub קבוע בקוד (הרשאת Contents: Read & write) ===
+        const GITHUB_TOKEN = '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';
+
+        // === כתובת ה-Netlify Function שמביאה קוד של גרסאות ישנות (ראה netlify/functions/fetch-code.js) ===
+        const CODE_PROXY_URL = 'https://amitmatyas-sitemanage.netlify.app/.netlify/functions/fetch-code';
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyBr4kDzw3n5PDu2pbZ3MItnCxi8YJFCRIQ",
+            authDomain: "schoolmangers.firebaseapp.com",
+            databaseURL: "https://schoolmangers-default-rtdb.firebaseio.com",
+            projectId: "schoolmangers",
+            storageBucket: "schoolmangers.firebasestorage.app",
+            messagingSenderId: "894509181268",
+            appId: "1:894509181268:web:c8ac6305f23fa003e3c0c1",
+            measurementId: "G-BE0R2WQ35J"
+        };
+
+        let db;
+        let globalData = { clients: {}, files: {}, versions: {}, comments: {}, notifications: {} };
+        let currentClientId = null;
+
+        // =====================================================
+        //  עזרים כלליים
+        // =====================================================
+        const esc = s => String(s ?? '').replace(/[&<>"']/g, ch => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[ch]));
+
+        // =====================================================
+        //  GitHub API
+        //  נדרשת הרשאת Contents: Read & write על ה-repos הרלוונטיים
+        // =====================================================
+        function hasGhToken() { return !!GITHUB_TOKEN && GITHUB_TOKEN !== 'YOUR_GITHUB_TOKEN_HERE'; }
+
+        function getGhToken() {
+            if (!hasGhToken()) throw new Error('יש להדביק את הטוקן ב-GITHUB_TOKEN בתחילת הסקריפט');
+            return GITHUB_TOKEN;
+        }
+
+        async function gh(path, opts = {}) {
+            const res = await fetch('https://api.github.com' + path, {
+                ...opts,
+                headers: {
+                    'Authorization': `Bearer ${getGhToken()}`,
+                    'Accept': 'application/vnd.github+json',
+                    ...(opts.body ? { 'Content-Type': 'application/json' } : {}),
+                    ...(opts.headers || {})
+                }
+            });
+            if (!res.ok) {
+                let msg = '';
+                try { msg = (await res.json()).message || ''; } catch (e) {}
+                const err = new Error(`GitHub ${res.status}${msg ? ': ' + msg : ''}`);
+                err.status = res.status;
+                throw err;
+            }
+            return res.json();
+        }
+
+        let reposCache = null;
+        async function fetchRepos(force) {
+            if (reposCache && !force) return reposCache;
+            let all = [];
+            for (let page = 1; page <= 10; page++) {
+                const chunk = await gh(`/user/repos?per_page=100&page=${page}&sort=updated&affiliation=owner,collaborator,organization_member`);
+                all = all.concat(chunk.map(r => ({ full: r.full_name, branch: r.default_branch })));
+                if (chunk.length < 100) break;
+            }
+            reposCache = all;
+            return all;
+        }
+
+        const treeCache = {};
+        async function fetchTree(repo, branch, force) {
+            const key = repo + '@' + branch;
+            if (treeCache[key] && !force) return treeCache[key];
+            const data = await gh(`/repos/${repo}/git/trees/${encodeURIComponent(branch)}?recursive=1`);
+            treeCache[key] = data.tree.filter(n => n.type === 'blob').map(n => n.path);
+            return treeCache[key];
+        }
+
+        // עותק מקומי של הקוד בדפדפן (IndexedDB) - לא נשמר בשום שרת. מאפשר הורדה/עריכה/commit בלי תלות ב-CORS
+        const codeDB = new Promise(res => {
+            try {
+                const r = indexedDB.open('code-cache', 1);
+                r.onupgradeneeded = () => r.result.createObjectStore('c');
+                r.onsuccess = () => res(r.result);
+                r.onerror = () => res(null);
+            } catch (e) { res(null); }
+        });
+        async function cachePut(key, code) {
+            const d = await codeDB; if (!d) return;
+            await new Promise(res => { const t = d.transaction('c', 'readwrite'); t.objectStore('c').put(code, key); t.oncomplete = t.onerror = () => res(); });
+        }
+        async function cacheGet(key) {
+            const d = await codeDB; if (!d) return null;
+            return new Promise(res => { const q = d.transaction('c').objectStore('c').get(key); q.onsuccess = () => res(q.result ?? null); q.onerror = () => res(null); });
+        }
+        async function getCode(url) {
+            const cached = await cacheGet(url);
+            if (cached != null) return cached;
+            try {
+                const r = await fetch(url, { cache: 'no-store' });
+                if (!r.ok) throw new Error('HTTP ' + r.status);
+                return await r.text();
+            } catch (directErr) {
+                // גרסאות ישנות (בלי _headers) נחסמות ע"י CORS - מנסים דרך ה-Function
+                if (!CODE_PROXY_URL) throw directErr;
+                const r = await fetch(`${CODE_PROXY_URL}?url=${encodeURIComponent(url)}`);
+                if (!r.ok) throw new Error('Proxy HTTP ' + r.status);
+                const code = await r.text();
+                await cachePut(url, code);
+                return code;
+            }
+        }
+
+        const encPath = p => p.split('/').map(encodeURIComponent).join('/');
+
+        function utf8ToBase64(str) {
+            const bytes = new TextEncoder().encode(str);
+            let bin = '';
+            for (let i = 0; i < bytes.length; i += 0x8000) bin += String.fromCharCode.apply(null, bytes.subarray(i, i + 0x8000));
+            return btoa(bin);
+        }
+
+        function publishLabel(v) {
+            if (v.status !== 'approved') return '';
+            if (v.publishState === 'done') return `🚀 פורסם ב-GitHub${v.commitSha ? ' (' + v.commitSha + ')' : ''}`;
+            if (v.publishState === 'committing') return '⏳ מפרסם ל-GitHub...';
+            if (v.publishState === 'error') return '⚠️ הפרסום נכשל';
+            return v.autoPublish === true ? '⏳ ממתין לפרסום אוטומטי' : '🔒 ממתין לאישור העלאה';
+        }
+
+        // commit של גרסה ל-GitHub.
+        // force=false: פרסום אוטומטי (רק אם עוד לא נוסה). force=true: אישור ידני / ניסיון חוזר.
+        // הטרנזקציה מבטיחה שגם אם יש כמה טאבים פתוחים - רק אחד יבצע commit.
+        async function commitVersion(vid, force) {
+            const v = globalData.versions[vid];
+            const f = v && globalData.files[v.fileId];
+            const c = f && globalData.clients[f.clientId];
+            if (!c || !c.repo) return { ok: false, error: 'ללקוח אין repo מוגדר' };
+            if (!f.repoPath) return { ok: false, error: 'הקובץ לא משויך לקובץ ב-GitHub' };
+
+            const tx = await runTransaction(ref(db, `versions/${vid}/publishState`), cur => {
+                if (force ? cur === 'done' : cur != null) return; // ביטול - כבר טופל
+                return 'committing';
+            });
+            if (!tx.committed) return { ok: false, error: 'הגרסה כבר פורסמה או בתהליך' };
+
+            try {
+                const code = await getCode(v.url).catch(e => { throw new Error('לא ניתן לקרוא את קוד הגרסה (' + e.message + '). גרסה ישנה? העלה אותה מחדש כגרסה חדשה.'); });
+
+                const branch = c.branch || 'main';
+                let sha;
+                try {
+                    sha = (await gh(`/repos/${c.repo}/contents/${encPath(f.repoPath)}?ref=${encodeURIComponent(branch)}`)).sha;
+                } catch (e) { if (e.status !== 404) throw e; } // 404 = קובץ חדש
+
+                const body = {
+                    message: `${f.displayName} v${v.version} - approved by ${c.name}`,
+                    content: utf8ToBase64(code),
+                    branch
+                };
+                if (sha) body.sha = sha;
+
+                const res = await gh(`/repos/${c.repo}/contents/${encPath(f.repoPath)}`, { method: 'PUT', body: JSON.stringify(body) });
+                delete treeCache[`${c.repo}@${branch}`];
+                await update(ref(db, `versions/${vid}`), {
+                    publishState: 'done',
+                    commitSha: res.commit.sha.slice(0, 7),
+                    commitUrl: res.commit.html_url,
+                    publishError: null
+                });
+                return { ok: true };
+            } catch (err) {
+                await update(ref(db, `versions/${vid}`), { publishState: 'error', publishError: err.message });
+                return { ok: false, error: err.message };
+            }
+        }
+
+        // פרסום אוטומטי - רק לגרסאות שהועלו עם autoPublish=true (גרסאות ישנות לא נוגעים בהן)
+        function autoPublishApproved() {
+            if (!db || !hasGhToken()) return;
+            getArr(globalData.versions).forEach(v => {
+                if (v.status === 'approved' && v.autoPublish === true && !v.publishState) commitVersion(v.id, false);
+            });
+        }
+
+        window.publishVersion = async function(vid) {
+            const v = globalData.versions[vid];
+            const f = globalData.files[v.fileId];
+            const c = globalData.clients[f.clientId];
+            if (!c || !c.repo) return alert('ללקוח אין repo מוגדר');
+            if (!f.repoPath) return alert('הקובץ לא משויך לקובץ ב-GitHub');
+            if (!confirm(`לבצע commit של v${v.version} אל ${c.repo}/${f.repoPath} (ענף ${c.branch || 'main'})?`)) return;
+            const r = await commitVersion(vid, true);
+            if (!r.ok) alert('הפרסום נכשל: ' + r.error);
+        };
+
+        // =====================================================
+        //  בחירת repo / קובץ
+        // =====================================================
+        let currentTree = [];
+        let treeKey = null;
+
+        window.loadRepoSelect = async function(force) {
+            const sel = document.getElementById('newClientRepo');
+            sel.innerHTML = '';
+            sel.add(new Option('טוען repos... ⏳', ''));
+            try {
+                const repos = await fetchRepos(force);
+                sel.innerHTML = '';
+                sel.add(new Option('בחר repo ללקוח...', ''));
+                repos.forEach(r => { const o = new Option(r.full, r.full); o.dataset.branch = r.branch; sel.add(o); });
+            } catch (e) {
+                sel.innerHTML = '';
+                sel.add(new Option('⚠️ ' + e.message + ' (🔄 לניסיון חוזר)', ''));
+            }
+        };
+
+        function fillSelect(selId, paths, filter, selected) {
+            const sel = document.getElementById(selId);
+            if (!sel) return;
+            const q = (filter || '').toLowerCase();
+            const matches = paths.filter(p => !q || p.toLowerCase().includes(q));
+            sel.innerHTML = '';
+            matches.slice(0, 500).forEach(p => { const o = new Option(p, p); if (p === selected) o.selected = true; sel.add(o); });
+            if (matches.length > 500) { const o = new Option(`... ועוד ${matches.length - 500} - צמצם בעזרת הסינון`, ''); o.disabled = true; sel.add(o); }
+        }
+
+        async function loadTreeForClient(clientId) {
+            const c = globalData.clients[clientId];
+            const sel = document.getElementById('repoFileSelect');
+            sel.innerHTML = '';
+            if (!c || !c.repo) { currentTree = []; sel.add(new Option('ללקוח אין repo - שייך repo קודם', '')); return; }
+            sel.add(new Option('טוען קבצים... ⏳', ''));
+            try {
+                const paths = await fetchTree(c.repo, c.branch || 'main');
+                if (currentClientId !== clientId) return;
+                currentTree = paths;
+                fillSelect('repoFileSelect', currentTree, document.getElementById('repoFileFilter').value);
+            } catch (e) {
+                if (currentClientId !== clientId) return;
+                currentTree = [];
+                sel.innerHTML = '';
+                sel.add(new Option(e.status === 409 ? 'ה-repo ריק - הקלד נתיב לקובץ חדש' : '⚠️ ' + e.message, ''));
+            }
+        }
+
+        window.filterRepoFiles = function(selId, q) {
+            fillSelect(selId, selId === 'repoFileSelect' ? currentTree : (window._modalPaths || []), q);
+        };
+
+        window.onRepoFilePicked = function() {
+            const p = document.getElementById('repoFileSelect').value;
+            if (!p) return;
+            document.getElementById('newRepoPath').value = '';
+            const base = p.split('/').pop().replace(/\.[^.]+$/, '');
+            const di = document.getElementById('fileDisplay');
+            
+            if (!di.value || di.value === di.dataset.auto) { di.value = base; di.dataset.auto = base; }
+        };
+
+        // =====================================================
+        //  Netlify (תצוגה מקדימה ללקוח)
+        //  מוסיפים _headers עם CORS - זו הסיבה ל-"Load failed" בהורדה
+        // =====================================================
+        const HEADERS_FILE = '/*\n  Access-Control-Allow-Origin: *\n';
+
+        async function sha1Of(text) {
+            const h = await crypto.subtle.digest('SHA-1', new TextEncoder().encode(text));
+            return Array.from(new Uint8Array(h)).map(b => b.toString(16).padStart(2, '0')).join('');
+        }
+
+        async function netlifyUpload(fileId, fName, code, status) {
+            const file = globalData.files[fileId];
+            let siteId = file.netlifySiteId;
+
+            if (!siteId) {
+                status.innerText = 'יוצר סביבה ב-Netlify... 🏗️';
+                const res = await fetch('https://api.netlify.com/api/v1/sites', {
+                    method: 'POST',
+                    headers: { 'Authorization': `Bearer ${NETLIFY_TOKEN}`, 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ name: `min-sys-${Date.now()}` })
+                });
+                const data = await res.json();
+                if (!data.site_id) throw new Error(data.message || 'יצירת האתר נכשלה');
+                siteId = data.site_id;
+                await update(ref(db, `files/${fileId}`), { netlifySiteId: siteId });
+            }
+
+            status.innerText = 'מעלה... 🚀';
+            const deployRes = await fetch(`https://api.netlify.com/api/v1/sites/${siteId}/deploys`, {
+                method: 'POST',
+                headers: { 'Authorization': `Bearer ${NETLIFY_TOKEN}`, 'Content-Type': 'application/json' },
+                body: JSON.stringify({ files: { '/_headers': await sha1Of(HEADERS_FILE), [fName]: await sha1Of(code) } })
+            });
+            const deployData = await deployRes.json();
+            if (!deployData.id) throw new Error(deployData.message || 'יצירת deploy נכשלה');
+
+            for (const [p, body] of [['/_headers', HEADERS_FILE], [fName, code]]) {
+                const r = await fetch(`https://api.netlify.com/api/v1/deploys/${deployData.id}/files${p}`, {
+                    method: 'PUT',
+                    headers: { 'Authorization': `Bearer ${NETLIFY_TOKEN}`, 'Content-Type': 'application/octet-stream' },
+                    body
+                });
+                if (!r.ok) throw new Error(`העלאת ${p} נכשלה`);
+            }
+            return (deployData.deploy_ssl_url || deployData.deploy_url) + fName;
+        }
+
+
+        // === פונקציית התחברות לסיסמה ===
+        window.checkPassword = function() {
+            if(document.getElementById('adminPass').value === 'Amit@2012') {
+                document.getElementById('authScreen').style.display = 'none';
+                document.getElementById('appContainer').style.display = 'block';
+                initFirebase(); // הפעלת הדאטהבייס רק לאחר אימות
+                window.loadRepoSelect();
+            } else {
+                alert('סיסמה שגויה! ❌');
+            }
+        };
+
+        function initFirebase() {
+            const app = initializeApp(firebaseConfig);
+            db = getDatabase(app);
+
+            onValue(ref(db, '/'), (snapshot) => {
+                const data = snapshot.val();
+                if (data) {
+                    globalData = {
+                        clients: data.clients || {},
+                        files: data.files || {},
+                        versions: data.versions || {},
+                        comments: data.comments || {},
+                        notifications: data.notifications || {}
+                    };
+                }
+                renderClients();
+                updateNotifCount();
+                renderNotifications();
+                if(currentClientId) { renderWorkspaceHeader(); renderFiles(); }
+                if(pendingSelect && globalData.clients[pendingSelect]) { const pc = globalData.clients[pendingSelect]; pendingSelect = null; window.selectClient(pc); }
+                autoPublishApproved();
+                
+                const modalTitle = document.getElementById('modalTitle').innerText;
+                if(modalTitle === 'היסטוריית גרסאות' && window.currentOpenFileId) {
+                    window.openHistory(window.currentOpenFileId);
+                }
+            });
+        }
+
+        function getArr(obj) { return Object.values(obj || {}); }
+
+        let pendingSelect = null;
+
+        window.toggleNewClient = function(show) {
+            const form = document.getElementById('newClientForm');
+            const open = typeof show === 'boolean' ? show : form.style.display === 'none';
+            form.style.display = open ? 'block' : 'none';
+            if(open) document.getElementById('newClientName').focus();
+        }
+
+        window.addClient = function() {
+            const name = document.getElementById('newClientName').value.trim();
+            const sel = document.getElementById('newClientRepo');
+            if(!name) return alert('הקלד שם ללקוח');
+            if(!sel.value) return alert('בחר repo ללקוח');
+            const id = 'c_' + Date.now();
+            set(ref(db, 'clients/' + id), { id, name, repo: sel.value, branch: sel.selectedOptions[0].dataset.branch || 'main' });
+            pendingSelect = id;
+            document.getElementById('newClientName').value = '';
+            sel.value = '';
+            window.toggleNewClient(false);
+            toast('הלקוח נוצר ✅');
+        }
+
+        function renderClients() {
+            const list = document.getElementById('clientList');
+            list.innerHTML = '';
+            const clients = getArr(globalData.clients);
+            document.getElementById('clientsEmpty').style.display = clients.length ? 'none' : 'block';
+            clients.forEach(c => {
+                const li = document.createElement('li');
+                if(c.id === currentClientId) li.className = 'active';
+                const n = document.createElement('span');
+                n.textContent = c.name;
+                const r = document.createElement('small');
+                r.dir = 'ltr';
+                r.style.fontWeight = '400';
+                r.textContent = c.repo ? c.repo.split('/').pop() : '⚠️ ללא repo';
+                li.appendChild(n);
+                li.appendChild(r);
+                li.onclick = () => window.selectClient(c);
+                list.appendChild(li);
+            });
+        }
+
+        window.selectClient = function(client) {
+            currentClientId = client.id;
+            document.getElementById('workspace').style.display = 'block';
+            document.getElementById('workspaceEmpty').style.display = 'none';
+            renderClients();
+            renderWorkspaceHeader();
+            renderFiles();
+            const hasFiles = getArr(globalData.files).some(f => f.clientId === client.id);
+            document.getElementById('addFileBox').open = !hasFiles;
+            if(window.innerWidth <= 800) document.getElementById('workspace').scrollIntoView({ behavior: 'smooth' });
+        }
+
+        function renderWorkspaceHeader() {
+            const c = globalData.clients[currentClientId];
+            if(!c) return;
+            document.getElementById('currentClientTitle').innerText = `סביבת לקוח: ${c.name}`;
+            document.getElementById('clientRepoInfo').innerHTML = `
+                <span class="badge" dir="ltr" style="margin:0; ${c.repo ? '' : 'background:#fee2e2;'}">${c.repo ? '📦 ' + esc(c.repo) + ' @ ' + esc(c.branch || 'main') : '⚠️ ללא repo'}</span>
+                <button onclick="window.openClientRepo('${c.id}')" style="padding:6px 14px; font-size:13px;">${c.repo ? 'שנה' : 'שייך'} repo</button>`;
+            const key = c.repo ? `${c.repo}@${c.branch || 'main'}` : '';
+            if(key !== treeKey) { treeKey = key; loadTreeForClient(c.id); }
+        }
+
+        window.openClientRepo = async function(clientId) {
+            const c = globalData.clients[clientId];
+            document.getElementById('modalTitle').innerText = `repo ללקוח: ${c.name}`;
+            document.getElementById('modalBody').innerHTML = `
+                <select id="clientRepoSelect" dir="ltr"><option>טוען... ⏳</option></select>
+                <button onclick="window.saveClientRepo('${clientId}')" style="background:#000; color:#fff; width:100%; height:50px; font-size:18px;">שמור</button>`;
+            document.getElementById('modal').style.display = 'flex';
+            try {
+                const repos = await fetchRepos();
+                const sel = document.getElementById('clientRepoSelect');
+                sel.innerHTML = '';
+                repos.forEach(r => { const o = new Option(r.full, r.full); o.dataset.branch = r.branch; if(r.full === c.repo) o.selected = true; sel.add(o); });
+            } catch (e) {
+                document.getElementById('modalBody').innerText = 'שגיאה: ' + e.message;
+            }
+        }
+
+        window.saveClientRepo = function(clientId) {
+            const o = document.getElementById('clientRepoSelect').selectedOptions[0];
+            if(!o) return;
+            update(ref(db, `clients/${clientId}`), { repo: o.value, branch: o.dataset.branch || 'main' });
+            window.closeModal();
+        }
+
+        window.addFile = function() {
+            const typed = document.getElementById('newRepoPath').value.trim().replace(/^\/+/, '');
+            const repoPath = typed || document.getElementById('repoFileSelect').value;
+            const c = globalData.clients[currentClientId];
+            if(!c || !c.repo) return alert('שייך repo ללקוח קודם');
+            if(!repoPath) return alert('בחר קובץ מה-repo (או הקלד נתיב לקובץ חדש)');
+            const base = repoPath.split('/').pop().replace(/\.[^.]+$/, '');
+            const disp = document.getElementById('fileDisplay').value.trim() || base;
+            const phys = document.getElementById('filePhysical').value.trim().replace(/\s+/g, '-')
+                || base.replace(/[^A-Za-z0-9_-]+/g, '-').replace(/^-+|-+$/g, '') || 'file';
+            const id = 'f_' + Date.now();
+            set(ref(db, 'files/' + id), { id, clientId: currentClientId, physicalName: phys, displayName: disp, netlifySiteId: null, repoPath });
+            document.getElementById('filePhysical').value = '';
+            const di = document.getElementById('fileDisplay');
+            di.value = '';
+            di.dataset.auto = '';
+            document.getElementById('newRepoPath').value = '';
+            document.getElementById('repoFileSelect').selectedIndex = -1;
+            document.getElementById('addFileBox').open = false;
+            toast('הקובץ נוצר ✅');
+        }
+
+        window.openFilePath = async function(fileId) {
+            const f = globalData.files[fileId];
+            const c = globalData.clients[f.clientId];
+            document.getElementById('modalTitle').innerText = `קובץ ב-GitHub: ${f.physicalName}`;
+            document.getElementById('modal').style.display = 'flex';
+            if(!c || !c.repo) { document.getElementById('modalBody').innerText = 'ללקוח אין repo - שייך repo קודם.'; return; }
+            document.getElementById('modalBody').innerHTML = `
+                <input type="text" dir="ltr" placeholder="סינון קבצים..." oninput="window.filterRepoFiles('modalRepoSelect', this.value)">
+                <select id="modalRepoSelect" size="8" dir="ltr"><option value="">טוען... ⏳</option></select>
+                <input type="text" id="modalNewPath" dir="ltr" placeholder="או נתיב לקובץ חדש" oninput="document.getElementById('modalRepoSelect').selectedIndex=-1">
+                <button onclick="window.saveFilePath('${fileId}')" style="background:#000; color:#fff; width:100%; height:50px; font-size:18px;">שמור</button>`;
+            try {
+                window._modalPaths = await fetchTree(c.repo, c.branch || 'main');
+                fillSelect('modalRepoSelect', window._modalPaths, '', f.repoPath);
+            } catch (e) {
+                const sel = document.getElementById('modalRepoSelect');
+                sel.innerHTML = '';
+                sel.add(new Option(e.status === 409 ? 'ה-repo ריק - הקלד נתיב לקובץ חדש' : '⚠️ ' + e.message, ''));
+            }
+        }
+
+        window.saveFilePath = function(fileId) {
+            const typed = document.getElementById('modalNewPath').value.trim().replace(/^\/+/, '');
+            const repoPath = typed || document.getElementById('modalRepoSelect').value;
+            if(!repoPath) return alert('בחר קובץ או הקלד נתיב');
+            update(ref(db, `files/${fileId}`), { repoPath });
+            window.closeModal();
+        }
+
+        const openMore = new Set();
+        window.rememberMore = function(id, isOpen) { if(isOpen) openMore.add(id); else openMore.delete(id); };
+
+        function renderFiles() {
+            const container = document.getElementById('filesContainer');
+            // שומרים טקסט שהאדמין התחיל לכתוב בתגובה, כדי שעדכון מהשרת לא ימחק אותו
+            const drafts = {};
+            container.querySelectorAll('input[id^="adminReply_"]').forEach(i => { drafts[i.id] = i.value; });
+            const focusedId = document.activeElement && document.activeElement.id;
+            container.innerHTML = '';
+            const clientFiles = getArr(globalData.files).filter(f => f.clientId === currentClientId);
+            
+            clientFiles.forEach(f => {
+                const versions = getArr(globalData.versions).filter(v => v.fileId === f.id);
+                const latestV = versions.length > 0 ? versions[versions.length - 1] : null;
+                const isScheduledActive = f.scheduled && new Date(f.scheduled.time).getTime() > Date.now();
+                const pubStr = latestV ? publishLabel(latestV) : '';
+                let statusClass = '';
+                let statusStr;
+                if (isScheduledActive) {
+                    statusClass = 'info';
+                    statusStr = `🕒 גרסה נוכחית - מתוזמנת ל-${new Date(f.scheduled.time).toLocaleString('he-IL')}`;
+                } else if (!latestV) {
+                    statusStr = 'אין גרסאות עדיין';
+                } else {
+                    const approved = latestV.status === 'approved';
+                    statusStr = `v${latestV.version} - ${approved ? 'מאושר' : 'ממתין לאישור הלקוח'}${pubStr ? ' · ' + pubStr : ''}`;
+                    statusClass = !approved ? 'wait' : (latestV.publishState === 'error' ? 'err' : (latestV.publishState === 'done' ? 'ok' : 'wait'));
+                }
+                const pathBadge = f.repoPath
+                    ? `<span class="badge" dir="ltr" style="background:#f0fdf4;">📂 ${esc(f.repoPath)}</span>`
+                    : `<span class="badge err">⚠️ לא משויך לקובץ ב-GitHub</span>`;
+                const linkBtn = `<button onclick="window.openFilePath('${f.id}')"${f.repoPath ? '' : ' style="background:#fee2e2;"'}>🔗 ${f.repoPath ? 'שנה' : 'שייך'} קובץ GitHub</button>`;
+
+                const card = document.createElement('div');
+                card.className = 'file-card';
+                card.innerHTML = `
+                    <h3>${esc(f.displayName)} <span style="font-size: 14px; color: #555; font-weight: 600;">(${esc(f.physicalName)})</span></h3>
+                    <div class="badges">
+                        <span class="badge ${statusClass}">${statusStr}</span>
+                        ${pathBadge}
+                    </div>
+                    <div class="file-actions" style="margin-bottom:0;">
+                        <button class="btn-primary" onclick="window.openEditor('${f.id}')">✏️ עריכה והעלאת גרסה חדשה</button>
+                        <button onclick="window.openHistory('${f.id}')">🕒 היסטוריית גרסאות</button>
+                        <button onclick="window.downloadLatest('${f.id}')">⬇️ הורדה</button>
+                        ${f.repoPath ? '' : linkBtn}
+                        ${f.scheduled ? `<button onclick="window.cancelSchedule('${f.id}')" style="background:#fee2e2;">❌ בטל תזמון</button>` : ''}
+                    </div>
+                    <details class="more" ${openMore.has(f.id) ? 'open' : ''} ontoggle="window.rememberMore('${f.id}', this.open)">
+                        <summary>עוד פעולות</summary>
+                        <div class="more-actions">
+                            ${f.repoPath ? linkBtn : ''}
+                            <button onclick="window.openSchedule('${f.id}')" style="background:#e0e7ff;">📅 תזמון העלאה</button>
+                        </div>
+                    </details>
+                    <div class="comment-box" id="comments_${f.id}"></div>
+                `;
+                container.appendChild(card);
+                renderComments(f.id, latestV ? latestV.id : null);
+            });
+            if (!clientFiles.length) container.innerHTML = '<div class="empty">אין עדיין קבצים ללקוח הזה.<br>הוסף קובץ בעזרת "הוספת קובץ חדש" למעלה.</div>';
+            Object.keys(drafts).forEach(id => { const el = document.getElementById(id); if (el) el.value = drafts[id]; });
+            if (focusedId && focusedId.startsWith('adminReply_')) { const el = document.getElementById(focusedId); if (el) el.focus(); }
+        }
+
+        window.openEditor = async function(fileId) {
+            const f = globalData.files[fileId];
+            const c = globalData.clients[f.clientId];
+            const versions = getArr(globalData.versions).filter(v => v.fileId === f.id);
+            const vNum = versions.length + 1;
+
+            window.modalLocked = true; // בעורך לא סוגרים בלחיצה בחוץ / Esc כדי לא לאבד קוד
+            document.getElementById('modalTitle').innerText = `עריכה: ${f.physicalName}-v${vNum}`;
+            document.getElementById('modalBody').innerHTML = `<div style="text-align:center; padding:30px; font-weight:800;">טוען קוד קודם... ⏳</div>`;
+            document.getElementById('modal').style.display = 'flex';
+
+            let prevCode = '<!DOCTYPE html>\n<html>\n<head>\n<title>Title</title>\n</head>\n<body>\n<h1>Hello</h1>\n</body>\n</html>';
+            if (versions.length > 0) {
+                try {
+                    prevCode = await getCode(versions[versions.length - 1].url);
+                } catch (err) {
+                    prevCode = '<!-- שגיאה בטעינת הקוד הקודם מהשרת: ' + err.message + ' -->';
+                }
+            }
+
+            const target = (c && c.repo && f.repoPath) ? `${c.repo}/${f.repoPath}` : null;
+
+            document.getElementById('modalBody').innerHTML = `
+                <div style="background: #eef2f3; padding: 15px; border: 2px dashed #000; border-radius: 8px; margin-bottom: 15px;">
+                    <label style="font-weight: 800; display: block; margin-bottom: 10px;">📁 העלה קובץ HTML מהמחשב (יחליף את הקוד למטה):</label>
+                    <input type="file" id="htmlUpload" accept=".html" onchange="window.handleFileUpload(event)" style="margin: 0; background: #fff; padding: 5px;">
+                </div>
+                <textarea id="codeEditor" style="height: 350px; font-family: monospace; font-size: 14px;" dir="ltr"></textarea>
+                <label style="display:flex; align-items:center; gap:10px; font-weight:800; margin-bottom:5px; cursor:pointer;">
+                    <input type="checkbox" id="autoPublish" checked style="width:auto; margin:0;">
+                    פרסם אוטומטית ל-GitHub כשהלקוח מאשר את הגרסה
+                </label>
+                <div dir="ltr" style="text-align:right; font-size:13px; font-weight:600; margin-bottom:15px; color:${target ? '#166534' : '#b91c1c'};">
+                    ${target ? '📂 ' + esc(target) : '⚠️ הקובץ לא משויך ל-repo / קובץ ב-GitHub - פרסום לא יתבצע עד לשיוך'}
+                </div>
+                <button onclick="window.deployCode('${fileId}', ${vNum})" id="deployBtn" style="background:#000; color:#fff; width:100%; height:50px; font-size:18px;">העלה גרסה ללקוח 🚀</button>
+                <div id="deployStatus" style="margin-top: 15px; font-weight: 800; text-align: center; font-size: 18px;"></div>
+            `;
+            // ערך ה-textarea נקבע דרך value (ולא דרך innerHTML) כדי שהקוד לא ישתנה (למשל &amp; -> &)
+            document.getElementById('codeEditor').value = prevCode;
+            document.getElementById('modal').style.display = 'flex';
+        }
+
+        // פונקציית העלאת קובץ לעורך
+        window.handleFileUpload = function(event) {
+            const file = event.target.files[0];
+            if(file) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    document.getElementById('codeEditor').value = e.target.result;
+                };
+                reader.readAsText(file);
+            }
+        }
+
+        window.deployCode = async function(fileId, vNum) {
+            if(!NETLIFY_TOKEN || NETLIFY_TOKEN === 'YOUR_NETLIFY_TOKEN_HERE') return alert('אנא הגדר NETLIFY_TOKEN בקוד');
+            
+            const code = document.getElementById('codeEditor').value;
+            const autoPublish = document.getElementById('autoPublish').checked;
+            const btn = document.getElementById('deployBtn');
+            const status = document.getElementById('deployStatus');
+            const file = globalData.files[fileId];
+            
+            btn.disabled = true;
+            status.innerText = 'מכין העלאה... ⏳';
+
+            try {
+                const fName = `/${file.physicalName}-v${vNum}.html`;
+                const url = await netlifyUpload(fileId, fName, code, status);
+                const vId = 'v_' + Date.now();
+                await cachePut(url, code);
+                
+                set(ref(db, 'versions/' + vId), {
+                    id: vId, fileId: fileId, version: vNum,
+                    url: url, isHidden: false, status: 'pending', autoPublish: autoPublish
+                });
+                
+                status.innerText = 'הועלה בהצלחה! ✅';
+                setTimeout(() => { window.closeModal(); }, 1500);
+
+            } catch (err) {
+                status.innerText = 'שגיאה: ' + err.message + ' ❌';
+                btn.disabled = false;
+            }
+        }
+
+        window.openHistory = function(fileId) {
+            window.currentOpenFileId = fileId;
+            const versions = getArr(globalData.versions).filter(v => v.fileId === fileId);
+            document.getElementById('modalTitle').innerText = 'היסטוריית גרסאות';
+            let html = versions.length ? '<ul class="item-list">' : '<div class="empty-note">אין גרסאות עדיין</div>';
+            versions.slice().reverse().forEach((v, idx) => {
+                const pub = publishLabel(v);
+                const canPublish = v.status === 'approved' && v.publishState !== 'done' && v.publishState !== 'committing';
+                html += `
+                <li>
+                    <span>
+                        <strong>v${v.version}</strong>${idx === 0 ? ' <span class="badge" style="margin:0 6px;">אחרונה</span>' : ''} - ${v.status === 'approved' ? '✅ מאושר' : '⏳ ממתין'}
+                        ${pub ? `<br><small style="font-weight:600;">${esc(pub)}${v.publishState === 'error' && v.publishError ? ' — ' + esc(v.publishError) : ''}${v.commitUrl ? ` · <a href="${esc(v.commitUrl)}" target="_blank">commit</a>` : ''}</small>` : ''}
+                    </span>
+                    <div style="display:flex; gap:10px; flex-wrap:wrap;">
+                        ${canPublish ? `<button onclick="window.publishVersion('${v.id}')" style="background:#dcfce7;">${v.publishState === 'error' ? '🔁 נסה שוב' : '🚀 אשר העלאה ל-GitHub'}</button>` : ''}
+                        <button onclick="window.open('${v.url}', '_blank')">צפה</button>
+                        <button onclick="window.toggleHide('${v.id}')">${v.isHidden ? '👁️ הצג ללקוח' : '🙈 הסתר מלקוח'}</button>
+                    </div>
+                </li>`;
+            });
+            html += '</ul>';
+            document.getElementById('modalBody').innerHTML = html;
+            document.getElementById('modal').style.display = 'flex';
+        }
+
+        window.toggleHide = function(vid) {
+            const isHidden = globalData.versions[vid].isHidden;
+            update(ref(db, `versions/${vid}`), { isHidden: !isHidden });
+        }
+
+        window.downloadLatest = async function(fileId) {
+            const versions = getArr(globalData.versions).filter(v => v.fileId === fileId);
+            if(versions.length === 0) return alert('אין גרסאות');
+            const v = versions[versions.length - 1];
+            const f = globalData.files[fileId];
+            try {
+                const blob = new Blob([await getCode(v.url)], { type: 'text/html' });
+                const a = document.createElement('a');
+                a.href = URL.createObjectURL(blob);
+                a.download = `${f.physicalName}-v${v.version}.html`;
+                document.body.appendChild(a);
+                a.click();
+                a.remove();
+                setTimeout(() => URL.revokeObjectURL(a.href), 10000);
+            } catch (err) {
+                // גרסאות שהועלו לפני הוספת _headers (CORS) לא ניתנות לקריאה מהדפדפן
+                if(confirm('לא ניתן להוריד אוטומטית את הגרסה הזו (' + err.message + '). לפתוח אותה בלשונית חדשה כדי לשמור ידנית?')) window.open(v.url, '_blank');
+            }
+        }
+
+        // תבנית עמוד "ספירה לאחור" שמוצגת ללקוח עד למועד העדכון המתוזמן
+        const COUNTDOWN_TEMPLATE = `<!DOCTYPE html>
+<html lang="he" dir="rtl" class="h-full">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>יתעדכן בקרוב - ספירה לאחור</title>
+    <script src="https://cdn.tailwindcss.com"><\/script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Heebo:wght@300;400;500;700&family=Rubik:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script>
+        tailwind.config = { theme: { extend: { fontFamily: { rubik: ['Rubik', 'sans-serif'], heebo: ['Heebo', 'sans-serif'] } } } }
+    <\/script>
+    <style>
+        body { font-family: 'Rubik', 'Heebo', sans-serif; background-color: #090d16; overflow-x: hidden; }
+        @keyframes subtleFloat { 0%, 100% { transform: translateY(0px); } 50% { transform: translateY(-12px); } }
+        .animate-float { animation: subtleFloat 4.5s ease-in-out infinite; }
+        @keyframes pulseGlow { 0%, 100% { opacity: 0.3; transform: scale(1); } 50% { opacity: 0.55; transform: scale(1.1); } }
+        .animate-glow { animation: pulseGlow 7s ease-in-out infinite alternate; }
+        @keyframes entranceScale { 0% { opacity: 0; transform: scale(0.92) translateY(25px); } 100% { opacity: 1; transform: scale(1) translateY(0); } }
+        .animate-entrance { animation: entranceScale 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
+        .white-card-shadow { box-shadow: 0 25px 50px -12px rgba(0,0,0,0.45), 0 0 60px -15px rgba(99,102,241,0.22), 0 0 0 1px rgba(255,255,255,0.9) inset; }
+        .grey-card-shadow { box-shadow: 0 10px 25px -5px rgba(0,0,0,0.08), 0 2px 6px -2px rgba(0,0,0,0.04), 0 0 0 1px rgba(203,213,225,0.8) inset; }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col items-center justify-center p-4 sm:p-6 relative text-slate-100 antialiased selection:bg-indigo-500 selection:text-white">
+    <div class="fixed inset-0 pointer-events-none overflow-hidden z-0">
+        <div class="absolute -top-40 -right-40 w-[450px] h-[450px] bg-indigo-600/30 rounded-full blur-[130px] animate-glow"></div>
+        <div class="absolute -bottom-40 -left-40 w-[450px] h-[450px] bg-blue-600/25 rounded-full blur-[140px] animate-glow" style="animation-delay: -3.5s;"></div>
+        <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-purple-600/15 rounded-full blur-[160px] animate-glow" style="animation-delay: -5s;"></div>
+        <div class="absolute inset-0 bg-[radial-gradient(#334155_1px,transparent_1px)] [background-size:28px_28px] opacity-25"></div>
+    </div>
+    <main class="relative z-10 w-full max-w-lg mx-auto flex flex-col items-center">
+        <div class="w-full animate-float">
+            <div class="animate-entrance flex flex-col items-center">
+                <div class="w-full bg-white rounded-3xl p-6 sm:p-10 md:p-12 text-center white-card-shadow border border-white/70 transition-all duration-300 hover:scale-[1.01] relative overflow-hidden">
+                    <h1 class="text-3xl sm:text-4xl md:text-5xl font-black text-slate-900 tracking-tight leading-none mb-6 sm:mb-8">הקוד יתעדכן ב:</h1>
+                    <div class="flex justify-center w-full">
+                        <div class="w-full max-w-md bg-slate-100 hover:bg-slate-100/90 transition-all duration-300 rounded-2xl p-4 sm:p-5 grey-card-shadow border border-slate-200/90">
+                            <div id="countdown-timer" class="grid grid-cols-4 gap-2 sm:gap-3 text-center items-center">
+                                <div class="bg-white/80 rounded-xl p-2 sm:p-3 border border-slate-200/60 shadow-sm flex flex-col items-center justify-center">
+                                    <span id="days" class="text-xl sm:text-3xl font-black text-slate-800 tabular-nums leading-tight">00</span>
+                                    <span class="text-[11px] sm:text-xs font-bold text-slate-500 mt-1">ימים</span>
+                                </div>
+                                <div class="bg-white/80 rounded-xl p-2 sm:p-3 border border-slate-200/60 shadow-sm flex flex-col items-center justify-center">
+                                    <span id="hours" class="text-xl sm:text-3xl font-black text-slate-800 tabular-nums leading-tight">00</span>
+                                    <span class="text-[11px] sm:text-xs font-bold text-slate-500 mt-1">שעות</span>
+                                </div>
+                                <div class="bg-white/80 rounded-xl p-2 sm:p-3 border border-slate-200/60 shadow-sm flex flex-col items-center justify-center">
+                                    <span id="minutes" class="text-xl sm:text-3xl font-black text-slate-800 tabular-nums leading-tight">00</span>
+                                    <span class="text-[11px] sm:text-xs font-bold text-slate-500 mt-1">דקות</span>
+                                </div>
+                                <div class="bg-white/80 rounded-xl p-2 sm:p-3 border border-slate-200/60 shadow-sm flex flex-col items-center justify-center bg-indigo-50/30">
+                                    <span id="seconds" class="text-xl sm:text-3xl font-black text-indigo-600 tabular-nums leading-tight">00</span>
+                                    <span class="text-[11px] sm:text-xs font-bold text-slate-500 mt-1">שניות</span>
+                                </div>
+                            </div>
+                            <div id="finished-message" class="hidden py-2 text-center">
+                                <span class="text-2xl sm:text-3xl font-black text-emerald-600 flex items-center justify-center gap-2">
+                                    <i class="fa-solid fa-circle-check"></i>
+                                    הגיעה השעה!
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="mt-4 text-xs sm:text-sm font-medium text-slate-400 flex items-center justify-center gap-1.5">
+                        <i class="fa-regular fa-clock text-indigo-500"></i>
+                        <span>__CAPTION__</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+    <script>
+        const targetDate = new Date(__YEAR__, __MONTH__, __DAY__, __HOUR__, __MINUTE__, 0).getTime();
+        function padZero(num) { return num < 10 ? '0' + num : num; }
+        function updateCountdown() {
+            const now = new Date().getTime();
+            const timeDifference = targetDate - now;
+            const timerElement = document.getElementById('countdown-timer');
+            const finishedMessageElement = document.getElementById('finished-message');
+            if (timeDifference <= 0) {
+                if (timerElement) timerElement.classList.add('hidden');
+                if (finishedMessageElement) finishedMessageElement.classList.remove('hidden');
+                return;
+            }
+            const days = Math.floor(timeDifference / (1000 * 60 * 60 * 24));
+            const hours = Math.floor((timeDifference % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+            const minutes = Math.floor((timeDifference % (1000 * 60 * 60)) / (1000 * 60));
+            const seconds = Math.floor((timeDifference % (1000 * 60)) / 1000);
+            document.getElementById('days').textContent = padZero(days);
+            document.getElementById('hours').textContent = padZero(hours);
+            document.getElementById('minutes').textContent = padZero(minutes);
+            document.getElementById('seconds').textContent = padZero(seconds);
+        }
+        updateCountdown();
+        setInterval(updateCountdown, 1000);
+    <\/script>
+</body>
+</html>`;
+
+        function buildCountdownHtml(dt) {
+            const year = dt.getFullYear();
+            const month = dt.getMonth(); // 0-indexed, matches new Date(y, m, d, h, min)
+            const day = dt.getDate();
+            const hour = dt.getHours();
+            const minute = dt.getMinutes();
+            const pad = n => n < 10 ? '0' + n : '' + n;
+            const caption = `${day}.${month + 1}.${year} בשעה ${pad(hour)}:${pad(minute)}`;
+            return COUNTDOWN_TEMPLATE
+                .replace('__YEAR__', year)
+                .replace('__MONTH__', month)
+                .replace('__DAY__', day)
+                .replace('__HOUR__', hour)
+                .replace('__MINUTE__', minute)
+                .replace('__CAPTION__', caption);
+        }
+
+        window.openSchedule = function(fileId) {
+            const f = globalData.files[fileId];
+            document.getElementById('modalTitle').innerText = `תזמון העלאה: ${f.physicalName}`;
+            document.getElementById('modalBody').innerHTML = `
+                <label style="font-weight: 800; display:block; margin-bottom:10px;">🗓️ תאריך ושעה לעדכון:</label>
+                <input type="datetime-local" id="scheduleDateTime" style="margin-bottom:20px;">
+                <button onclick="window.saveSchedule('${fileId}')" id="scheduleBtn" style="background:#000; color:#fff; width:100%; height:50px; font-size:18px;">שמור תזמון 📅</button>
+                <div id="scheduleStatus" style="margin-top: 15px; font-weight: 800; text-align: center; font-size: 18px;"></div>
+            `;
+            document.getElementById('modal').style.display = 'flex';
+        }
+
+        window.saveSchedule = async function(fileId) {
+            const dtInput = document.getElementById('scheduleDateTime');
+            const status = document.getElementById('scheduleStatus');
+            const btn = document.getElementById('scheduleBtn');
+
+            if(!dtInput.value) return alert('יש לבחור תאריך ושעה');
+
+            btn.disabled = true;
+            status.innerText = 'מעלה... ⏳';
+
+            try {
+                const targetDt = new Date(dtInput.value);
+                const code = buildCountdownHtml(targetDt);
+                const file = globalData.files[fileId];
+                const url = await netlifyUpload(fileId, `/${file.physicalName}-scheduled.html`, code, status);
+
+                // לא נספר כגרסה: נשמר על הקובץ עצמו, לא ברשימת versions
+                update(ref(db, `files/${fileId}`), {
+                    scheduled: { url: url, time: targetDt.toISOString() }
+                });
+
+                status.innerText = 'התזמון נשמר בהצלחה! ✅';
+                setTimeout(() => { window.closeModal(); }, 1500);
+
+            } catch (err) {
+                status.innerText = 'שגיאה: ' + err.message + ' ❌';
+                btn.disabled = false;
+            }
+        }
+
+        window.cancelSchedule = function(fileId) {
+            if(!confirm('לבטל את התזמון?')) return;
+            update(ref(db, `files/${fileId}`), { scheduled: null });
+        }
+
+        function renderComments(fileId, versionId) {
+            const box = document.getElementById(`comments_${fileId}`);
+            if(!versionId || !box) return;
+            const comms = getArr(globalData.comments).filter(c => c.versionId === versionId);
+            let html = '<h4>הערות גרסה אחרונה:</h4>';
+            if(!comms.length) html += '<div class="empty-note">אין הערות מהלקוח עדיין</div>';
+            comms.forEach(c => {
+                html += `<div class="comment"><strong>${c.author === 'admin' ? 'אני' : 'לקוח'}</strong> ${esc(c.text)}</div>`;
+            });
+
+            // שורת השבת אדמין ללקוח
+            html += `
+                <div class="reply-area">
+                    <input type="text" id="adminReply_${versionId}" placeholder="השב ללקוח כאן..." style="margin:0;" onkeydown="if(event.key==='Enter')window.sendAdminReply('${versionId}', '${fileId}')">
+                    <button onclick="window.sendAdminReply('${versionId}', '${fileId}')" style="white-space:nowrap;">שלח תגובה</button>
+                </div>
+            `;
+            box.innerHTML = html;
+        }
+
+        window.sendAdminReply = function(versionId, fileId) {
+            const input = document.getElementById(`adminReply_${versionId}`);
+            const text = input.value.trim();
+            if(!text) return;
+            input.value = ''; // מנקים לפני השמירה, כדי שהרענון לא ישחזר את הטקסט
+
+            const cId = 'cm_' + Date.now();
+            set(ref(db, 'comments/' + cId), { id: cId, versionId: versionId, text: text, author: 'admin' });
+
+            const file = globalData.files[fileId];
+            const vData = globalData.versions[versionId];
+
+            // שליחת התראה ללקוח (target: 'client')
+            const nId = 'n_' + Date.now();
+            set(ref(db, 'notifications/' + nId), {
+                id: nId,
+                text: `💬 האדמין הגיב לפרויקט: ${file.displayName} (v${vData.version})`,
+                read: false,
+                target: 'client',
+                clientId: file.clientId
+            });
+            toast('התגובה נשלחה ✅');
+        }
+
+        window.toggleNotifications = function() {
+            const nc = document.getElementById('notifCenter');
+            nc.style.display = nc.style.display === 'block' ? 'none' : 'block';
+        }
+
+        function adminNotifications() {
+            // רק התראות של אדמין (או התראות ישנות בלי target)
+            return getArr(globalData.notifications).filter(n => !n.target || n.target === 'admin');
+        }
+
+        function renderNotifications() {
+            const list = document.getElementById('notifList');
+            list.innerHTML = '';
+            const adminNotifs = adminNotifications().reverse();
+            if(!adminNotifs.length) { list.innerHTML = '<div class="empty-note">אין התראות חדשות</div>'; return; }
+
+            adminNotifs.forEach(n => {
+                const div = document.createElement('div');
+                div.style = `border-bottom: 2px solid #eee; padding: 15px 0; ${!n.read ? 'font-weight: 800; background:#f0f0f0; padding:15px;' : ''} border-radius: 4px; margin-bottom: 5px;`;
+                div.innerHTML = `${esc(n.text)}${!n.read ? `<br><button class="btn-sm" style="margin-top:10px;" onclick="window.markRead('${n.id}')">סמן כנקרא</button>` : ''}`;
+                list.appendChild(div);
+            });
+        }
+
+        window.markRead = function(id) {
+            update(ref(db, `notifications/${id}`), { read: true });
+        }
+
+        window.markAllRead = function() {
+            const up = {};
+            adminNotifications().filter(n => !n.read).forEach(n => { up[`notifications/${n.id}/read`] = true; });
+            if(Object.keys(up).length) update(ref(db), up);
+        }
+
+        function updateNotifCount() {
+            const unread = adminNotifications().filter(n => !n.read).length;
+            const el = document.getElementById('notifCount');
+            el.innerText = unread;
+            el.style.background = unread ? '#d32f2f' : '#000';
+        }
+
+        window.closeModal = function() {
+            document.getElementById('modal').style.display = 'none';
+            window.currentOpenFileId = null;
+            window.modalLocked = false;
+        }
+
+        function toast(msg) {
+            const t = document.createElement('div');
+            t.className = 'toast';
+            t.textContent = msg;
+            document.body.appendChild(t);
+            setTimeout(() => t.remove(), 2500);
+        }
+
+        // סגירת חלונות: לחיצה על הרקע / Esc (לא בעורך קוד, כדי לא לאבד עבודה)
+        document.getElementById('modal').addEventListener('mousedown', e => {
+            if(e.target.id === 'modal' && !window.modalLocked) window.closeModal();
+        });
+        document.addEventListener('keydown', e => {
+            if(e.key !== 'Escape') return;
+            document.getElementById('notifCenter').style.display = 'none';
+            if(document.getElementById('modal').style.display === 'flex' && !window.modalLocked) window.closeModal();
+        });
+        // סגירת מרכז ההתראות בלחיצה מחוצה לו
+        document.addEventListener('click', e => {
+            const nc = document.getElementById('notifCenter');
+            if(nc.style.display === 'block' && e.target.isConnected && !nc.contains(e.target) && !e.target.closest('#notifBtn')) nc.style.display = 'none';
+        });
+    </script>
+</body>
+</html>
